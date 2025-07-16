@@ -1,1 +1,3 @@
 # authnet-portal
+.env
+env
