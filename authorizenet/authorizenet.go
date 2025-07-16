@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -52,7 +52,7 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response: %v", err)
 	}
@@ -65,13 +65,16 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 }
 
 type CustomerProfile struct {
-	Email       string `json:"email"`
-	Description string `json:"description"`
+	MerchantCustomerId string           `json:"merchantCustomerId,omitempty"`
+	PaymentProfiles    []PaymentProfile `json:"paymentProfiles,omitempty"`
+	Email              string           `json:"email"`
+	Description        string           `json:"description"`
 }
 
 type CreateCustomerProfileRequest struct {
 	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
 	Profile                CustomerProfile        `json:"profile"`
+	ValidationMode         string                 `json:"validationMode,omitempty"`
 }
 
 type CreateCustomerProfileResponse struct {
@@ -85,17 +88,29 @@ type CreateCustomerProfileResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) CreateCustomerProfile(profile CustomerProfile) (string, error) {
-	request := CreateCustomerProfileRequest{
-		MerchantAuthentication: c.Auth,
-		Profile:                profile,
+func (c *APIClient) CreateCustomerProfile(profile CustomerProfile, validationMode string) (string, error) {
+	requestWrapper := struct {
+		CreateCustomerProfileRequest CreateCustomerProfileRequest `json:"createCustomerProfileRequest"`
+	}{
+		CreateCustomerProfileRequest: CreateCustomerProfileRequest{
+			MerchantAuthentication: c.Auth,
+			Profile:                profile,
+			ValidationMode:         validationMode,
+		},
 	}
-	var response CreateCustomerProfileResponse
-	if err := c.makeRequest(request, &response); err != nil {
+	var responseWrapper struct {
+		CreateCustomerProfileResponse CreateCustomerProfileResponse `json:"createCustomerProfileResponse"`
+	}
+	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
 		return "", err
 	}
-	if response.Messages.ResultCode != "OK" {
-		return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+
+	response := responseWrapper.CreateCustomerProfileResponse
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return "", fmt.Errorf("API error %s", response.Messages.Message[0].Text)
+		}
+		return "", fmt.Errorf("API error: unkown error")
 	}
 	return response.CustomerProfileId, nil
 }
@@ -125,10 +140,95 @@ func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileRes
 	if err := c.makeRequest(request, &response); err != nil {
 		return nil, err
 	}
-	if response.Messages.ResultCode != "OK" {
+	if response.Messages.ResultCode != "Ok" {
 		return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 	}
 	return &response, nil
+}
+
+type Paging struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
+type GetCustomerProfileIdsRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	Paging                 *Paging                `json:"paging,omitempty"`
+}
+
+type GetCustomerProfileIdsResponse struct {
+	Ids                 []string `json:"ids"`
+	TotalNumInResultSet int      `json:"totalNumInResultSet"`
+	Messages            struct {
+		ResultCode string `json:"resultCode"`
+		Message    []struct {
+			Code string `json:"code"`
+			Text string `json:"text"`
+		} `json:"message"`
+	} `json:"messages"`
+}
+
+func (c *APIClient) GetAllCustomerProfileIds() ([]string, error) {
+	var allProfileIds []string
+	limit := 1000
+	offset := 1
+
+	for {
+		requestWrapper := struct {
+			GetCustomerProfileIdsRequest GetCustomerProfileIdsRequest `json:"getCustomerProfileIdsRequest"`
+		}{
+			GetCustomerProfileIdsRequest: GetCustomerProfileIdsRequest{
+				MerchantAuthentication: c.Auth,
+				Paging: &Paging{
+					Limit:  limit,
+					Offset: offset,
+				},
+			},
+		}
+
+		var responseWrapper struct {
+			GetCustomerProfileIdsResponse GetCustomerProfileIdsResponse `json:"getCustomerProfileIdsResponse"`
+		}
+		if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
+			return nil, fmt.Errorf("failed to make API request: %v", err)
+		}
+
+		response := responseWrapper.GetCustomerProfileIdsResponse
+
+		if response.Messages.ResultCode != "Ok" {
+			if len(response.Messages.Message) > 0 {
+				return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+			}
+			return nil, fmt.Errorf("API error: unknown error")
+		}
+
+		allProfileIds = append(allProfileIds, response.Ids...)
+
+		if len(response.Ids) < limit {
+			break
+		}
+
+		offset += limit
+	}
+
+	return allProfileIds, nil
+}
+
+func (c *APIClient) GetAllCustomerProfiles() ([]CustomerProfile, error) {
+	ids, err := c.GetAllCustomerProfileIds()
+	if err != nil {
+		return nil, err
+	}
+
+	var profiles []CustomerProfile
+	for _, id := range ids {
+		profile, err := c.GetCustomerProfile(id)
+		if err != nil {
+			return nil, err
+		}
+		profiles = append(profiles, profile.Profile)
+	}
+	return profiles, nil
 }
 
 type TransactionRequestType struct {
@@ -229,7 +329,7 @@ func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) 
 	if err := c.makeRequest(request, &response); err != nil {
 		return err
 	}
-	if response.Messages.ResultCode != "OK" {
+	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
@@ -273,7 +373,7 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 	if err := c.makeRequest(request, &response); err != nil {
 		return "", err
 	}
-	if response.Messages.ResultCode != "OK" {
+	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
@@ -286,6 +386,15 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 type CreditCard struct {
 	CardNumber     string `json:"cardNumber"`
 	ExpirationDate string `json:"expirationDate"`
+}
+
+type Payment struct {
+	CreditCard CreditCard `json:"creditCard"`
+}
+
+type PaymentProfile struct {
+	CustomerType string  `json:"customerType"`
+	Payment      Payment `json:"payment"`
 }
 
 func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (string, error) {
@@ -325,7 +434,7 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (
 	if err := c.makeRequest(request, &response); err != nil {
 		return "", err
 	}
-	if response.Messages.ResultCode != "OK" {
+	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
