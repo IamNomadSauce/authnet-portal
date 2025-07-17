@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 type CreateProfileRequest struct {
@@ -154,7 +155,7 @@ func addShippingAddressHandler(client *authorizenet.APIClient) http.HandlerFunc 
 			return
 		}
 
-		response := map[string]string{"cusotmerAddressId": addressID}
+		response := map[string]string{"customerAddressId": addressID}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
@@ -182,7 +183,7 @@ func addPaymentProfileHandler(client *authorizenet.APIClient) http.HandlerFunc {
 			return
 		}
 
-		response := map[string]string{"cusotmerPaymettProfileId": paymentProfileID}
+		response := map[string]string{"customerPaymentProfileId": paymentProfileID}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
@@ -190,14 +191,18 @@ func addPaymentProfileHandler(client *authorizenet.APIClient) http.HandlerFunc {
 }
 
 func main() {
-	apiLoginID := os.Getenv("AUTHNET_LOGIN")
-	transactionKey := os.Getenv("AUTHNET_TRANSACTION_KEY")
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file", err)
+	}
+	apiLoginID := os.Getenv("AUTHORIZENET_NAME")
+	transactionKey := os.Getenv("AUTHORIZENET_TRANSACTION_KEY")
 
 	if apiLoginID == "" || transactionKey == "" {
 		log.Fatal("Missing login-id or transaction-key")
 	}
 
-	client := authorizenet.NewAPICLient(apiLoginID, transactionKey, authorizenet.SandboxEndpoint)
+	client := authorizenet.NewAPIClient(apiLoginID, transactionKey, authorizenet.SandboxEndpoint)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/customer-profiles", createCustomerProfileHandler(client)).Methods("POST")

@@ -234,6 +234,7 @@ func (c *APIClient) GetAllCustomerProfiles() ([]CustomerProfile, error) {
 type TransactionRequestType struct {
 	TransactionType string `json:"transactionType"`
 	Amount          string `json:"amount"`
+	RefTransId      string `json:"refTransId,omitempty"`
 	Profile         struct {
 		CustomerProfileID string `json:"customerProfileId"`
 		PaymentProfile    struct {
@@ -287,6 +288,73 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount st
 	if err := c.makeRequest(request, &response); err != nil {
 		return "", err
 	}
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return "", fmt.Errorf("API error: unknown error")
+	}
+	return response.TransactionResponse.TransId, nil
+}
+
+func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (string, error) {
+	transactionRequst := TransactionRequestType{
+		TransactionType: "authOnlyTransaction",
+		Amount:          amount,
+		Profile: struct {
+			CustomerProfileID string `json:"customerProfileId"`
+			PaymentProfile    struct {
+				PaymentProfileId string `json:"paymentProfileId"`
+			} `json:"paymentProfile"`
+		}{
+			CustomerProfileID: profileID,
+			PaymentProfile: struct {
+				PaymentProfileId string `json:"paymentProfileId"`
+			}{
+				PaymentProfileId: paymentProfileID,
+			},
+		},
+	}
+
+	request := CreateTransactionRequest{
+		MerchantAuthentication: c.Auth,
+		TransactionRequest:     transactionRequst,
+	}
+
+	var response CreateTransactionResponse
+	if err := c.makeRequest(request, &response); err != nil {
+		return "", err
+	}
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return "", fmt.Errorf("API error: unknown error")
+	}
+	return response.TransactionResponse.TransId, nil
+}
+
+func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (string, error) {
+	transactionRequest := TransactionRequestType{
+		TransactionType: "priorAuthCaptureTransaction",
+		RefTransId:      refTransId,
+		Amount:          amount,
+	}
+
+	requestWrapper := struct {
+		CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
+	}{
+		CreateTransactionRequest: CreateTransactionRequest{
+			MerchantAuthentication: c.Auth,
+			TransactionRequest:     transactionRequest,
+		},
+	}
+
+	var response CreateTransactionResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return "", err
+	}
+
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
