@@ -102,16 +102,15 @@ func chargeCustomerProfileHandler(client *authorizenet.APIClient) http.HandlerFu
 			return
 		}
 
-		transID, err := client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount)
+		transactionResponse, err := client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response := map[string]string{"transactionId": transID}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(w).Encode(transactionResponse)
 	}
 }
 

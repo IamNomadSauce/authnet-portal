@@ -133,7 +133,7 @@ type GetCustomerProfileResponse struct {
 
 func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileResponse, error) {
 	requestWrapper := struct {
-		Request GetCustomerProfileRequest `json:"getCustomerProfilerequest"`
+		Request GetCustomerProfileRequest `json:"getCustomerProfileRequest"`
 	}{
 		Request: GetCustomerProfileRequest{
 			MerchantAuthentication: c.Auth,
@@ -142,7 +142,7 @@ func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileRes
 	}
 
 	var responseWrapper struct {
-		Response GetCustomerProfileResponse `json:"getGetCustomerProfileResponse"`
+		Response GetCustomerProfileResponse `json:"getCustomerProfileResponse"`
 	}
 
 	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
@@ -288,7 +288,7 @@ type CreateTransactionResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount string) (string, error) {
+func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount string) (*FullTransactionResponse, error) {
 	transactionRequest := TransactionRequestType{
 		TransactionType: "authCaptureTransaction",
 		Amount:          amount,
@@ -306,7 +306,6 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount st
 			},
 		},
 	}
-
 	request := struct {
 		Request CreateTransactionRequest `json:"createTransactionRequest"`
 	}{
@@ -317,15 +316,15 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount st
 	}
 	var response CreateTransactionResponse
 	if err := c.makeRequest(request, &response); err != nil {
-		return "", err
+		return nil, err
 	}
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
-		return "", fmt.Errorf("API error: unknown error")
+		return nil, fmt.Errorf("API error: unknown error")
 	}
-	return response.TransactionResponse.TransId, nil
+	return &response.TransactionResponse, nil
 }
 
 func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (string, error) {
@@ -400,7 +399,7 @@ func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (stri
 }
 
 type UpdateableProfileData struct {
-	CustomerProfileId string `json:"customerprofileId"`
+	CustomerProfileId string `json:"customerProfileId"`
 	Email             string `json:"email,omitempty"`
 	Description       string `json:"description,omitempty"`
 }
