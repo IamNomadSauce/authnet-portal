@@ -132,16 +132,29 @@ type GetCustomerProfileResponse struct {
 }
 
 func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileResponse, error) {
-	request := GetCustomerProfileRequest{
-		MerchantAuthentication: c.Auth,
-		CustomerProfileId:      profileID,
+	requestWrapper := struct {
+		Request GetCustomerProfileRequest `json:"getCustomerProfilerequest"`
+	}{
+		Request: GetCustomerProfileRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      profileID,
+		},
 	}
-	var response GetCustomerProfileResponse
-	if err := c.makeRequest(request, &response); err != nil {
+
+	var responseWrapper struct {
+		Response GetCustomerProfileResponse `json:"getGetCustomerProfileResponse"`
+	}
+
+	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
 		return nil, err
 	}
+
+	response := responseWrapper.Response
 	if response.Messages.ResultCode != "Ok" {
-		return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		if len(response.Messages.Message) > 0 {
+			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return nil, fmt.Errorf("API error: unknown error")
 	}
 	return &response, nil
 }
@@ -243,16 +256,30 @@ type TransactionRequestType struct {
 	} `json:"profile"`
 }
 
+type FullTransactionResponse struct {
+	ResponseCode  string `json:"responseCode"`
+	AuthCode      string `json:"authCode"`
+	AvsResultCode string `json:"avsResultCode"`
+	CvvResultCode string `json:"cvvResultCode"`
+	TransId       string `json:"transId"`
+	Messages      []struct {
+		Code        string `json:"code"`
+		Description string `json:"description"`
+	} `json:"messages"`
+	Errors []struct {
+		ErrorCode string `json:"errorCode"`
+		ErrorText string `json:"errorText"`
+	} `json:"errors"`
+}
+
 type CreateTransactionRequest struct {
 	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
 	TransactionRequest     TransactionRequestType `json:"transactionRequest"`
 }
 
 type CreateTransactionResponse struct {
-	TransactionResponse struct {
-		TransId string `json:"transId"`
-	} `json:"transactionResponse"`
-	Messages struct {
+	TransactionResponse FullTransactionResponse `json:"transactionResponse"`
+	Messages            struct {
 		ResultCode string `json:"resultCode"`
 		Message    []struct {
 			Code string `json:"code"`
@@ -280,9 +307,13 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount st
 		},
 	}
 
-	request := CreateTransactionRequest{
-		MerchantAuthentication: c.Auth,
-		TransactionRequest:     transactionRequest,
+	request := struct {
+		Request CreateTransactionRequest `json:"createTransactionRequest"`
+	}{
+		Request: CreateTransactionRequest{
+			MerchantAuthentication: c.Auth,
+			TransactionRequest:     transactionRequest,
+		},
 	}
 	var response CreateTransactionResponse
 	if err := c.makeRequest(request, &response); err != nil {
@@ -316,9 +347,13 @@ func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount
 		},
 	}
 
-	request := CreateTransactionRequest{
-		MerchantAuthentication: c.Auth,
-		TransactionRequest:     transactionRequst,
+	request := struct {
+		Request CreateTransactionRequest `json:"createTransactionRequest"`
+	}{
+		Request: CreateTransactionRequest{
+			MerchantAuthentication: c.Auth,
+			TransactionRequest:     transactionRequst,
+		},
 	}
 
 	var response CreateTransactionResponse
@@ -364,24 +399,28 @@ func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (stri
 	return response.TransactionResponse.TransId, nil
 }
 
+type UpdateableProfileData struct {
+	CustomerProfileId string `json:"customerprofileId"`
+	Email             string `json:"email,omitempty"`
+	Description       string `json:"description,omitempty"`
+}
+
+type UpdateCustomerProfileRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	Profile                UpdateableProfileData  `json:"profile"`
+}
+
 func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) error {
-	request := struct {
-		MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
-		Profile                struct {
-			CustomerProfileId string `json:"customerProfileId"`
-			Email             string `json:"email"`
-			Description       string `json:"description"`
-		} `json:"profile"`
+	requestWrapper := struct {
+		Request UpdateCustomerProfileRequest `json:"updateCustomerProfileRequest"`
 	}{
-		MerchantAuthentication: c.Auth,
-		Profile: struct {
-			CustomerProfileId string `json:"customerProfileId"`
-			Email             string `json:"email"`
-			Description       string `json:"description"`
-		}{
-			CustomerProfileId: profileID,
-			Email:             email,
-			Description:       description,
+		Request: UpdateCustomerProfileRequest{
+			MerchantAuthentication: c.Auth,
+			Profile: UpdateableProfileData{
+				CustomerProfileId: profileID,
+				Email:             email,
+				Description:       description,
+			},
 		},
 	}
 
@@ -394,7 +433,7 @@ func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) 
 			} `json:"message"`
 		} `json:"messages"`
 	}
-	if err := c.makeRequest(request, &response); err != nil {
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return err
 	}
 	if response.Messages.ResultCode != "Ok" {
@@ -417,15 +456,21 @@ type ShippingAddress struct {
 	Country   string `json:"country"`
 }
 
+type CreateCustomerShippingAddressRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId      string                 `json:"customerProfileId"`
+	Address                ShippingAddress        `json:"address"`
+}
+
 func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress) (string, error) {
-	request := struct {
-		MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
-		CustomerProfileId      string                 `json:"customerProfileId"`
-		Address                ShippingAddress        `json:"address"`
+	requestWrapper := struct {
+		Request CreateCustomerShippingAddressRequest `json:"createCustomerShippingAddressRequest"`
 	}{
-		MerchantAuthentication: c.Auth,
-		CustomerProfileId:      profileID,
-		Address:                address,
+		Request: CreateCustomerShippingAddressRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      profileID,
+			Address:                address,
+		},
 	}
 
 	var response struct {
@@ -438,7 +483,7 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 			} `json:"message"`
 		} `json:"messages"`
 	}
-	if err := c.makeRequest(request, &response); err != nil {
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return "", err
 	}
 	if response.Messages.ResultCode != "Ok" {
@@ -465,30 +510,27 @@ type PaymentProfile struct {
 	Payment      Payment `json:"payment"`
 }
 
+type CreateCustomerPaymentProfileRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId      string                 `json:"customerProfileId"`
+	PaymentProfile         PaymentProfile         `json:"paymentProfile"`
+}
+
 func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (string, error) {
-	request := struct {
-		MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
-		CustomerProfileId      string                 `json:"customerProfileId"`
-		PaymentProfile         struct {
-			Payment struct {
-				CreditCard CreditCard `json:"creditCard"`
-			} `json:"payment"`
-		} `json:"paymentProfile"`
+	requestWrapper := struct {
+		Request CreateCustomerPaymentProfileRequest `json:"createCustomerPaymentProfileRequest"`
 	}{
-		MerchantAuthentication: c.Auth,
-		CustomerProfileId:      profileID,
-		PaymentProfile: struct {
-			Payment struct {
-				CreditCard CreditCard `json:"creditCard"`
-			} `json:"payment"`
-		}{
-			Payment: struct {
-				CreditCard CreditCard `json:"creditCard"`
-			}{
-				CreditCard: creditCard,
+		Request: CreateCustomerPaymentProfileRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      profileID,
+			PaymentProfile: PaymentProfile{
+				Payment: Payment{
+					CreditCard: creditCard,
+				},
 			},
 		},
 	}
+
 	var response struct {
 		CustomerPaymentProfileId string `json:"customerPaymentProfileId"`
 		Messages                 struct {
@@ -499,7 +541,7 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (
 			} `json:"message"`
 		} `json:"messages"`
 	}
-	if err := c.makeRequest(request, &response); err != nil {
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return "", err
 	}
 	if response.Messages.ResultCode != "Ok" {
