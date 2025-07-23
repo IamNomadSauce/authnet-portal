@@ -116,16 +116,19 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 	}
 
 	// The validation mode can now come from the config for consistency
-	validationMode := app.config.AuthNet.ValidationMode
-	if req.ValidationMode != "" {
-		validationMode = req.ValidationMode // Allow overriding from request
-	}
+	// validationMode := app.config.AuthNet.ValidationMode
+	// if req.ValidationMode != "" {
+	// 	validationMode = req.ValidationMode // Allow overriding from request
+	// }
 
-	profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	log.Printf("Create Customer Profile: %+v", req.Profile)
+
+	profileID := "101010101010"
+	// profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	response := map[string]string{"customerProfileId": profileID}
 	w.Header().Set("Content-Type", "application/json")
