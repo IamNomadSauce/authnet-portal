@@ -74,7 +74,7 @@ func main() {
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
 	log.Println("Server starting on :1337")
-	if err := http.ListenAndServe(":1337", r); err != nil {
+	if err := http.ListenAndServeTLS(":1337", "cert.pem", "key.pem", r); err != nil {
 		log.Fatal(err)
 	}
 }
