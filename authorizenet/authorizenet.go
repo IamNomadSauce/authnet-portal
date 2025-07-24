@@ -508,8 +508,9 @@ type Payment struct {
 }
 
 type PaymentProfile struct {
-	CustomerType string  `json:"customerType"`
-	Payment      Payment `json:"payment"`
+	CustomerType string           `json:"customerType"`
+	BillTo       *ShippingAddress `json:"billTo,omitempty"`
+	Payment      Payment          `json:"payment"`
 }
 
 type CreateCustomerPaymentProfileRequest struct {
