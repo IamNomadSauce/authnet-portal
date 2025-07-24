@@ -3,6 +3,7 @@ package main
 import (
 	"authnet/authorizenet"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -109,8 +110,17 @@ type AddShippingAddressRequest struct {
 }
 
 func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Received raw JSON payload: %s", string(body))
+
 	var req CreateProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("--> JSON decoding error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
