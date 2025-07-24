@@ -70,10 +70,10 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 
 type CustomerProfile struct {
 	MerchantCustomerId string            `json:"merchantCustomerId,omitempty"`
-	PaymentProfiles    []PaymentProfile  `json:"paymentProfiles,omitempty"`
-	Email              string            `json:"email"`
 	Description        string            `json:"description"`
+	PaymentProfiles    []PaymentProfile  `json:"paymentProfiles,omitempty"`
 	ShipToList         []ShippingAddress `json:"shipToList,omitempty"`
+	Email              string            `json:"email"`
 }
 
 type CreateCustomerProfileRequest struct {
