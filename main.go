@@ -2,6 +2,7 @@ package main
 
 import (
 	"authnet/authorizenet"
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -110,35 +111,34 @@ type AddShippingAddressRequest struct {
 }
 
 func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
-
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
 		return
 	}
+
 	log.Printf("Received raw JSON payload: %s", string(body))
 
 	var req CreateProfileRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		log.Printf("--> JSON decoding error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// The validation mode can now come from the config for consistency
-	// validationMode := app.config.AuthNet.ValidationMode
-	// if req.ValidationMode != "" {
-	// 	validationMode = req.ValidationMode // Allow overriding from request
-	// }
+	log.Printf("Successfully decoded request.")
 
-	log.Printf("Create Customer Profile: %+v", req.Profile)
+	validationMode := app.config.AuthNet.ValidationMode
+	if req.ValidationMode != "" {
+		validationMode = req.ValidationMode
+	}
 
-	profileID := "101010101010"
-	// profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	response := map[string]string{"customerProfileId": profileID}
 	w.Header().Set("Content-Type", "application/json")
