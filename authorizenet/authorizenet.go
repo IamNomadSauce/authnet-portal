@@ -69,10 +69,11 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 }
 
 type CustomerProfile struct {
-	MerchantCustomerId string           `json:"merchantCustomerId,omitempty"`
-	PaymentProfiles    []PaymentProfile `json:"paymentProfiles,omitempty"`
-	Email              string           `json:"email"`
-	Description        string           `json:"description"`
+	MerchantCustomerId string            `json:"merchantCustomerId,omitempty"`
+	PaymentProfiles    []PaymentProfile  `json:"paymentProfiles,omitempty"`
+	Email              string            `json:"email"`
+	Description        string            `json:"description"`
+	ShipToList         []ShippingAddress `json:"shipToList,omitempty"`
 }
 
 type CreateCustomerProfileRequest struct {
@@ -102,18 +103,15 @@ func (c *APIClient) CreateCustomerProfile(profile CustomerProfile, validationMod
 			ValidationMode:         validationMode,
 		},
 	}
-	var responseWrapper struct {
-		CreateCustomerProfileResponse CreateCustomerProfileResponse `json:"createCustomerProfileResponse"`
-	}
-	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
+	var response CreateCustomerProfileResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return "", err
 	}
 
-	response := responseWrapper.CreateCustomerProfileResponse
 	if response.Messages.ResultCode != "Ok" {
 		log.Printf("Authorize.Net Error Response: %+v", response)
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error %s", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
+			return "", fmt.Errorf("API error %s %s", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
 		}
 		return "", fmt.Errorf("API error: Request failed with ResultCode '%s' but no message was provided", response.Messages.ResultCode)
 	}
