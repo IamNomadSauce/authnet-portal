@@ -57,6 +57,9 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 		return fmt.Errorf("failed to read response: %v", err)
 	}
 
+	bom := []byte{0xef, 0xbb, 0xbf}
+	body = bytes.TrimPrefix(body, bom)
+
 	if err := json.Unmarshal(body, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %v", err)
 	}
