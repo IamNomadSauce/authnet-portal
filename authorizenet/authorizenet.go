@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -110,10 +111,11 @@ func (c *APIClient) CreateCustomerProfile(profile CustomerProfile, validationMod
 
 	response := responseWrapper.CreateCustomerProfileResponse
 	if response.Messages.ResultCode != "Ok" {
+		log.Printf("Authorize.Net Error Response: %+v", response)
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error %s", response.Messages.Message[0].Text)
+			return "", fmt.Errorf("API error %s", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
 		}
-		return "", fmt.Errorf("API error: unkown error")
+		return "", fmt.Errorf("API error: Request failed with ResultCode '%s' but no message was provided", response.Messages.ResultCode)
 	}
 	return response.CustomerProfileId, nil
 }
