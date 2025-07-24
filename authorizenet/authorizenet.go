@@ -102,6 +102,7 @@ func (c *APIClient) CreateCustomerProfile(profile CustomerProfile, validationMod
 			ValidationMode:         validationMode,
 		},
 	}
+	log.Printf("CreateCustomerProfile:ValidationMode:%s", validationMode)
 	var response CreateCustomerProfileResponse
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return "", err

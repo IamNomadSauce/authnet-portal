@@ -45,6 +45,7 @@ func main() {
 	}
 
 	authnetEnv := os.Getenv("AUTHORIZENET_ENVIRONMENT")
+	log.Printf("Main: authnetEnv: %s", authnetEnv)
 	if authnetEnv == "production" {
 		cfg.AuthNet.ValidationMode = "liveMode"
 		cfg.AuthNet.Endpoint = authorizenet.ProductionEndpoint
