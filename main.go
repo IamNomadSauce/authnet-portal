@@ -44,7 +44,7 @@ func main() {
 		log.Fatal("Missing login-id or transaction-key")
 	}
 
-	authnetEnv := os.Getenv("AUTHNET_ENVIRONMENT")
+	authnetEnv := os.Getenv("AUTHORIZENET_ENVIRONMENT")
 	if authnetEnv == "production" {
 		cfg.AuthNet.ValidationMode = "liveMode"
 		cfg.AuthNet.Endpoint = authorizenet.ProductionEndpoint
@@ -133,6 +133,8 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 	if req.ValidationMode != "" {
 		validationMode = req.ValidationMode
 	}
+
+	log.Printf("Create Customer Profile: ValidationMode %s", validationMode)
 
 	profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
 	if err != nil {
