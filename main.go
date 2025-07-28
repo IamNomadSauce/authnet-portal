@@ -263,20 +263,29 @@ func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Add Shipping Address Handler reached.")
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		http.Error(w, "Missing request body", http.StatusBadRequest)
+		http.Error(w, "Missing customer profile ID in URL path", http.StatusBadRequest)
 		return
 	}
-	log.Println("Add Shipping Address Handler", id)
+	log.Println("Profile ID from URL:", id)
+
+	// Add logging to see the raw request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Received raw JSON for shipping address: %s", string(body))
 
 	var req AddShippingAddressRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
+		log.Printf("--> JSON decoding error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	log.Println("Address:", req.Address)
 
 	addressID, err := app.client.AddShippingAddress(id, req.Address)
 	if err != nil {
