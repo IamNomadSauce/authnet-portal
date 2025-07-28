@@ -69,6 +69,7 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 }
 
 type CustomerProfile struct {
+	CustomerProfileId  string           `json:"customerProfileId,omitempty"`
 	MerchantCustomerId string           `json:"merchantCustomerId,omitempty"`
 	Description        string           `json:"description"`
 	Email              string           `json:"email"`
@@ -465,8 +466,20 @@ type CreateCustomerShippingAddressRequest struct {
 	Address                ShippingAddress        `json:"address"`
 }
 
+type CreateCustomerShippingAddressResponse struct {
+	CustomerAddressId string `json:"customerAddressId"`
+	Messages          struct {
+		ResultCode string `json:"resultCode"`
+		Message    []struct {
+			Code string `json:"code"`
+			Text string `json:"text"`
+		} `json:"message"`
+	} `json:"messages"`
+}
+
 func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress) (string, error) {
 	log.Println("Add shipping address to profile:", profileID)
+
 	requestWrapper := struct {
 		Request CreateCustomerShippingAddressRequest `json:"createCustomerShippingAddressRequest"`
 	}{
@@ -478,17 +491,9 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 	}
 
 	var responseWrapper struct {
-		Response struct {
-			CustomerAddressId string `json:"customerAddressId"`
-			Messages          struct {
-				ResultCode string `json:"resultCode"`
-				Message    []struct {
-					Code string `json:"code"`
-					Text string `json:"text"`
-				} `json:"message"`
-			} `json:"messages"`
-		}
+		Response CreateCustomerShippingAddressResponse `json:"createCustomerShippingAddressResponse"`
 	}
+
 	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
 		return "", err
 	}
