@@ -143,6 +143,8 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 		return
 	}
 
+	log.Printf("Successfully created profile. Returning ID: %s to client.", profileID)
+
 	response := map[string]string{"customerProfileId": profileID}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
