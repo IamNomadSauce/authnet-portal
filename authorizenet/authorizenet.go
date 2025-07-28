@@ -449,13 +449,14 @@ func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) 
 }
 
 type ShippingAddress struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Address   string `json:"address"`
-	City      string `json:"city"`
-	State     string `json:"state"`
-	Zip       string `json:"zip"`
-	Country   string `json:"country"`
+	CustomerAddressId string `json:"customerAddressId,omitempty"`
+	FirstName         string `json:"firstName"`
+	LastName          string `json:"lastName"`
+	Address           string `json:"address"`
+	City              string `json:"city"`
+	State             string `json:"state"`
+	Zip               string `json:"zip"`
+	Country           string `json:"country"`
 }
 
 type CreateCustomerShippingAddressRequest struct {
@@ -465,6 +466,7 @@ type CreateCustomerShippingAddressRequest struct {
 }
 
 func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress) (string, error) {
+	log.Println("Add shipping address to profile:", profileID)
 	requestWrapper := struct {
 		Request CreateCustomerShippingAddressRequest `json:"createCustomerShippingAddressRequest"`
 	}{
@@ -475,24 +477,28 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 		},
 	}
 
-	var response struct {
-		CustomerAddressId string `json:"customerAddressId"`
-		Messages          struct {
-			ResultCode string `json:"resultCode"`
-			Message    []struct {
-				Code string `json:"code"`
-				Text string `json:"text"`
-			} `json:"message"`
-		} `json:"messages"`
+	var responseWrapper struct {
+		Response struct {
+			CustomerAddressId string `json:"customerAddressId"`
+			Messages          struct {
+				ResultCode string `json:"resultCode"`
+				Message    []struct {
+					Code string `json:"code"`
+					Text string `json:"text"`
+				} `json:"message"`
+			} `json:"messages"`
+		}
 	}
-	if err := c.makeRequest(requestWrapper, &response); err != nil {
+	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
 		return "", err
 	}
+
+	response := responseWrapper.Response
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+			return "", fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
 		}
-		return "", fmt.Errorf("API error: unknown error")
+		return "", fmt.Errorf("API error: add shipping address failed with ResultCode '%s'", response.Messages.ResultCode)
 	}
 
 	return response.CustomerAddressId, nil
@@ -508,9 +514,10 @@ type Payment struct {
 }
 
 type PaymentProfile struct {
-	CustomerType string           `json:"customerType"`
-	BillTo       *ShippingAddress `json:"billTo,omitempty"`
-	Payment      Payment          `json:"payment"`
+	CustomerPaymentProfileId string           `json:"customerPaymentProfileId,omitempty"`
+	CustomerType             string           `json:"customerType"`
+	BillTo                   *ShippingAddress `json:"billTo,omitempty"`
+	Payment                  Payment          `json:"payment"`
 }
 
 type CreateCustomerPaymentProfileRequest struct {
