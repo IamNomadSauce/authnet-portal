@@ -263,6 +263,7 @@ func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Add Shipping Address Handler")
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
