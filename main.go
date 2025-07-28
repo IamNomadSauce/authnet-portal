@@ -263,19 +263,20 @@ func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Add Shipping Address Handler")
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		http.Error(w, "Missing request body", http.StatusBadRequest)
 		return
 	}
+	log.Println("Add Shipping Address Handler", id)
 
 	var req AddShippingAddressRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	log.Println("Address:", req.Address)
 
 	addressID, err := app.client.AddShippingAddress(id, req.Address)
 	if err != nil {
