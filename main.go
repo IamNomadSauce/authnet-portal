@@ -331,6 +331,7 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Updating Customer Billing Address")
 	vars := mux.Vars(r)
 	customerProfileId, ok1 := vars["id"]
 	paymentProfiled, ok2 := vars["paymentProfileId"]
