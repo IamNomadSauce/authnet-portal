@@ -490,15 +490,11 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 		},
 	}
 
-	var responseWrapper struct {
-		Response CreateCustomerShippingAddressResponse `json:"createCustomerShippingAddressResponse"`
-	}
-
-	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
+	var response CreateCustomerShippingAddressResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return "", err
 	}
 
-	response := responseWrapper.Response
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return "", fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
