@@ -241,11 +241,13 @@ func (c *APIClient) GetAllCustomerProfiles() ([]CustomerProfile, error) {
 
 	var profiles []CustomerProfile
 	for _, id := range ids {
+		// 'profile' is now type *CustomerProfile
 		profile, err := c.GetCustomerProfile(id)
 		if err != nil {
 			return nil, err
 		}
-		profiles = append(profiles, profile.Profile)
+		// Append the dereferenced struct, not profile.Profile
+		profiles = append(profiles, *profile)
 	}
 	return profiles, nil
 }
