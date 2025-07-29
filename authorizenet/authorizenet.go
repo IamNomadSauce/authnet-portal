@@ -505,6 +505,53 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 	return response.CustomerAddressId, nil
 }
 
+type UpdateCustomerPaymentProfileRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId      string                 `json:"customerProfileId"`
+	PaymentProfile         PaymentProfile         `json:"paymentProfile"`
+}
+
+type UpdateCustomerPaymentProfileResponse struct {
+	Messages struct {
+		ResultCode string `json:"resultCode"`
+		Message    []struct {
+			Code string `json:"code"`
+			Text string `json:"text"`
+		} `json:"message"`
+	} `json:"messages"`
+}
+
+func (c *APIClient) UpdateBillingAddress(customerprofileID string, paymentProfileID string, address ShippingAddress) error {
+	log.Printf("Updating billing address for customer profile: %s, payment profile: %s", customerprofileID, paymentProfileID)
+
+	requestWrapper := struct {
+		Request UpdateCustomerPaymentProfileRequest `json:"updateCustomerPaymentProfileRequest"`
+	}{
+		Request: UpdateCustomerPaymentProfileRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      customerprofileID,
+			PaymentProfile: PaymentProfile{
+				CustomerPaymentProfileId: paymentProfileID,
+				BillTo:                   &address,
+			},
+		},
+	}
+
+	var response UpdateCustomerPaymentProfileResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
+		}
+		return fmt.Errorf("API error: update billing failed with ResultCode '%s'", response.Messages.ResultCode)
+	}
+
+	return nil
+}
+
 type CreditCard struct {
 	CardNumber     string `json:"cardNumber"`
 	ExpirationDate string `json:"expirationDate"`

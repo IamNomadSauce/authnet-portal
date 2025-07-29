@@ -73,6 +73,7 @@ func main() {
 	r.HandleFunc("/customer-profiles/{id}", app.updateCustomerProfileHandler).Methods("PUT")
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses", app.addShippingAddressHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles", app.addPaymentProfileHandler).Methods("POST")
+	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
 	r.HandleFunc("/transactions/authorize", app.authorizeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
@@ -108,6 +109,10 @@ type AddPaymentProfileRequest struct {
 }
 
 type AddShippingAddressRequest struct {
+	Address authorizenet.ShippingAddress `json:"address"`
+}
+
+type UpdateBillingAddressRequest struct {
 	Address authorizenet.ShippingAddress `json:"address"`
 }
 
@@ -323,4 +328,28 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	customerProfileId, ok1 := vars["id"]
+	paymentProfiled, ok2 := vars["paymentProfileId"]
+
+	if !ok1 || !ok2 {
+		http.Error(w, "Missing customer or payment profile ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	var req UpdateBillingAddressRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := app.client.UpdateBillingAddress(customerProfileId, paymentProfiled, req.Address)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
