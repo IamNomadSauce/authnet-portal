@@ -334,9 +334,20 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 
 func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating Customer Billing Address")
+
+	// Read the raw body from the request
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("!!! Could not read request body: %v", err)
+		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
+		return
+	}
+
+	// Log the raw body so we can see exactly what ColdFusion is sending
+	log.Printf("--- Raw request body received: %s", string(body))
+
 	vars := mux.Vars(r)
 	customerProfileId, ok1 := vars["id"]
-	// Fixed typo here: paymentProfiled -> paymentProfileId
 	paymentProfileId, ok2 := vars["paymentProfileId"]
 
 	if !ok1 || !ok2 {
@@ -345,15 +356,14 @@ func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *ht
 	}
 
 	var req UpdateBillingAddressRequest
-	// Add logging to see the exact error if decoding fails
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// We now use bytes.NewReader(body) because the original r.Body has already been read
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		log.Printf("!!! Failed to decode billing address JSON body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// This function should now be reached
-	err := app.client.UpdateBillingAddress(customerProfileId, paymentProfileId, req.Address)
+	err = app.client.UpdateBillingAddress(customerProfileId, paymentProfileId, req.Address)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
