@@ -135,7 +135,8 @@ type GetCustomerProfileResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileResponse, error) {
+// Change the function signature to return *CustomerProfile
+func (c *APIClient) GetCustomerProfile(profileID string) (*CustomerProfile, error) {
 	log.Println("--- GetCustomerProfile ---")
 
 	requestWrapper := struct {
@@ -147,14 +148,12 @@ func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileRes
 		},
 	}
 
-	// ✅ The response from Authorize.Net is NOT wrapped, so we decode directly.
 	var response GetCustomerProfileResponse
 
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return nil, err
 	}
 
-	// This logic will now correctly check the ResultCode from the API.
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
@@ -162,7 +161,8 @@ func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileRes
 		return nil, fmt.Errorf("API error: unknown error from Authorize.Net")
 	}
 
-	return &response, nil
+	// Return the nested profile directly
+	return &response.Profile, nil
 }
 
 type Paging struct {
