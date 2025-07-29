@@ -336,7 +336,8 @@ func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *ht
 	log.Println("Updating Customer Billing Address")
 	vars := mux.Vars(r)
 	customerProfileId, ok1 := vars["id"]
-	paymentProfiled, ok2 := vars["paymentProfileId"]
+	// Fixed typo here: paymentProfiled -> paymentProfileId
+	paymentProfileId, ok2 := vars["paymentProfileId"]
 
 	if !ok1 || !ok2 {
 		http.Error(w, "Missing customer or payment profile ID in URL", http.StatusBadRequest)
@@ -344,12 +345,15 @@ func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *ht
 	}
 
 	var req UpdateBillingAddressRequest
+	// Add logging to see the exact error if decoding fails
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("!!! Failed to decode billing address JSON body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err := app.client.UpdateBillingAddress(customerProfileId, paymentProfiled, req.Address)
+	// This function should now be reached
+	err := app.client.UpdateBillingAddress(customerProfileId, paymentProfileId, req.Address)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
