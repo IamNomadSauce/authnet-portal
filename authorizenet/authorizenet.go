@@ -136,8 +136,6 @@ type GetCustomerProfileResponse struct {
 }
 
 func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileResponse, error) {
-	log.Println("Get Customer Profile for ID:", profileID)
-
 	requestWrapper := struct {
 		Request GetCustomerProfileRequest `json:"getCustomerProfileRequest"`
 	}{
@@ -147,22 +145,21 @@ func (c *APIClient) GetCustomerProfile(profileID string) (*GetCustomerProfileRes
 		},
 	}
 
-	// ✅ The response variable is the direct target, without a wrapper.
-	var response GetCustomerProfileResponse
+	var responseWrapper struct {
+		Response GetCustomerProfileResponse `json:"getCustomerProfileResponse"`
+	}
 
-	// ✅ Pass the response object directly to makeRequest.
-	if err := c.makeRequest(requestWrapper, &response); err != nil {
+	if err := c.makeRequest(requestWrapper, &responseWrapper); err != nil {
 		return nil, err
 	}
 
-	// This logic will now correctly check the ResultCode from the API.
+	response := responseWrapper.Response
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
 			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
-		return nil, fmt.Errorf("API error: unknown error from Authorize.Net")
+		return nil, fmt.Errorf("API error: unknown error")
 	}
-
 	return &response, nil
 }
 
