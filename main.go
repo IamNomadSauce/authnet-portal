@@ -157,6 +157,7 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) getCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Get Customer Handler")
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -164,6 +165,7 @@ func (app *application) getCustomerProfileHandler(w http.ResponseWriter, r *http
 		return
 	}
 
+	// The 'profile' variable is now the *CustomerProfile object you want
 	profile, err := app.client.GetCustomerProfile(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -171,9 +173,9 @@ func (app *application) getCustomerProfileHandler(w http.ResponseWriter, r *http
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(profile.Profile)
+	// Just encode the profile object directly
+	json.NewEncoder(w).Encode(profile)
 }
-
 func (app *application) getAllCustomerProfilesHandler(w http.ResponseWriter, r *http.Request) {
 	profiles, err := app.client.GetAllCustomerProfiles()
 	if err != nil {
