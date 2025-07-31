@@ -254,9 +254,15 @@ func (c *APIClient) GetAllCustomerProfiles() ([]CustomerProfile, error) {
 	return profiles, nil
 }
 
+type Order struct {
+	InvoiceNumber string `json:"invoiceNumber,omitempty"`
+	Description   string `json:"description,omitempty"`
+}
+
 type TransactionRequestType struct {
 	TransactionType string `json:"transactionType"`
 	Amount          string `json:"amount"`
+	Order           *Order `json:"order,omitempty"`
 	RefTransId      string `json:"refTransId,omitempty"`
 	Profile         struct {
 		CustomerProfileID string `json:"customerProfileId"`
@@ -298,7 +304,7 @@ type CreateTransactionResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount string) (*FullTransactionResponse, error) {
+func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber string) (*FullTransactionResponse, error) {
 	transactionRequest := TransactionRequestType{
 		TransactionType: "authCaptureTransaction",
 		Amount:          amount,
@@ -316,6 +322,10 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount st
 			},
 		},
 	}
+	if invoiceNumber != "" {
+		transactionRequest.Order = &Order{InvoiceNumber: invoiceNumber}
+	}
+
 	request := struct {
 		Request CreateTransactionRequest `json:"createTransactionRequest"`
 	}{
