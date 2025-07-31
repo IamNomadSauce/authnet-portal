@@ -304,9 +304,15 @@ type CreateTransactionResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber string) (*FullTransactionResponse, error) {
+func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, transactionType string) (*FullTransactionResponse, error) {
+
+	finalTransactionType := "authCaptureTransaction"
+	if transactionType == "authOnlyTransaction" {
+		finalTransactionType = "authOnlyTransaction"
+	}
+
 	transactionRequest := TransactionRequestType{
-		TransactionType: "authCaptureTransaction",
+		TransactionType: finalTransactionType,
 		Amount:          amount,
 		Profile: struct {
 			CustomerProfileID string `json:"customerProfileId"`

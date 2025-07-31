@@ -93,6 +93,7 @@ type ChargeRequest struct {
 	PaymentProfileID string `json:"paymentProfileId"`
 	Amount           string `json:"amount"`
 	InvoiceNumber    string `json:"invoiceNumber,omitempty"`
+	TransactionType  string `json:"transactionType,omitempty"`
 }
 
 type CaptureRequest struct {
@@ -195,7 +196,7 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber)
+	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
