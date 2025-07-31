@@ -527,6 +527,46 @@ func (c *APIClient) AddShippingAddress(profileID string, address ShippingAddress
 	return response.CustomerAddressId, nil
 }
 
+type DeleteCustomerShippingAddressRequest struct {
+	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId      string                 `json:"customerProfileId"`
+	CustomerAddressId      string                 `json:"customerAddressId"`
+}
+
+func (c APIClient) DeleteShippingAddress(profileID, addressID string) error {
+	requestWrapper := struct {
+		Request DeleteCustomerShippingAddressRequest `json:"deleteCustomershippingAddress"`
+	}{
+		Request: DeleteCustomerShippingAddressRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      profileID,
+			CustomerAddressId:      addressID,
+		},
+	}
+
+	var response struct {
+		Messages struct {
+			ResultCode string `json:"resultCode"`
+			Message    []struct {
+				Code string `json:"Code"`
+				Text string `json:"text"`
+			} `json:"message"`
+		} `json:"messages"`
+	}
+
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return fmt.Errorf("API error: unknown error")
+	}
+	return nil
+}
+
 type UpdateCustomerPaymentProfileRequest struct {
 	MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
 	CustomerProfileId      string                 `json:"customerProfileId"`

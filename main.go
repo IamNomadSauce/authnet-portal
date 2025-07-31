@@ -72,6 +72,7 @@ func main() {
 	r.HandleFunc("/transactions", app.chargeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}", app.updateCustomerProfileHandler).Methods("PUT")
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses", app.addShippingAddressHandler).Methods("POST")
+	r.HandleFunc("/customer-profiles/{id}/shipping-addresses/{addressId}", app.addShippingAddressHandler).Methods("DELETE")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles", app.addPaymentProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
 	r.HandleFunc("/transactions/authorize", app.authorizeCustomerProfileHandler).Methods("POST")
@@ -306,6 +307,25 @@ func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (app *application) deleteShippingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	profileId, ok1 := vars["id"]
+	addressId, ok2 := vars["addressId"]
+
+	if !ok1 || !ok2 {
+		http.Error(w, "Missing customer or address profile ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	err := app.client.DeleteShippingAddress(profileId, addressId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.Request) {
