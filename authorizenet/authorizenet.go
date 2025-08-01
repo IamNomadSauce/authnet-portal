@@ -58,8 +58,14 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 		return fmt.Errorf("failed to read response: %v", err)
 	}
 
-	bom := []byte{0xef, 0xbb, 0xbf}
-	body = bytes.TrimPrefix(body, bom)
+	if len(body) > 0 {
+		bom := []byte{0xef, 0xbb, 0xbf}
+		body = bytes.TrimPrefix(body, bom)
+
+		if err := json.Unmarshal(body, response); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %v", err)
+		}
+	}
 
 	if err := json.Unmarshal(body, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %v", err)
@@ -534,6 +540,7 @@ type DeleteCustomerShippingAddressRequest struct {
 }
 
 func (c APIClient) DeleteShippingAddress(profileID, addressID string) error {
+	log.Println("Delete Shipping Address")
 	requestWrapper := struct {
 		Request DeleteCustomerShippingAddressRequest `json:"deleteCustomershippingAddress"`
 	}{
