@@ -58,17 +58,18 @@ func (c *APIClient) makeRequest(requestBody interface{}, response interface{}) e
 		return fmt.Errorf("failed to read response: %v", err)
 	}
 
-	if len(body) > 0 {
+	// ✅ Trim whitespace from the body before checking its length
+	trimmedBody := bytes.TrimSpace(body)
+
+	// ✅ Only attempt to parse if the trimmed body has content
+	if len(trimmedBody) > 0 {
 		bom := []byte{0xef, 0xbb, 0xbf}
-		body = bytes.TrimPrefix(body, bom)
+		bodyToParse := bytes.TrimPrefix(trimmedBody, bom)
 
-		if err := json.Unmarshal(body, response); err != nil {
-			return fmt.Errorf("failed to unmarshal response: %v", err)
+		if err := json.Unmarshal(bodyToParse, response); err != nil {
+			// Updated error message to include the problematic body for easier debugging
+			return fmt.Errorf("failed to unmarshal response: %v. Body received: %s", err, string(bodyToParse))
 		}
-	}
-
-	if err := json.Unmarshal(body, response); err != nil {
-		return fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
 	return nil
