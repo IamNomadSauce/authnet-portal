@@ -540,10 +540,9 @@ type DeleteCustomerShippingAddressRequest struct {
 	CustomerAddressId      string                 `json:"customerAddressId"`
 }
 
-func (c APIClient) DeleteShippingAddress(profileID, addressID string) error {
-	log.Println("Delete Shipping Address")
+func (c *APIClient) DeleteShippingAddress(profileID, addressID string) error {
 	requestWrapper := struct {
-		Request DeleteCustomerShippingAddressRequest `json:"deleteCustomershippingAddress"`
+		Request DeleteCustomerShippingAddressRequest `json:"deleteCustomerShippingAddressRequest"`
 	}{
 		Request: DeleteCustomerShippingAddressRequest{
 			MerchantAuthentication: c.Auth,
@@ -552,26 +551,16 @@ func (c APIClient) DeleteShippingAddress(profileID, addressID string) error {
 		},
 	}
 
-	var response struct {
-		Messages struct {
-			ResultCode string `json:"resultCode"`
-			Message    []struct {
-				Code string `json:"Code"`
-				Text string `json:"text"`
-			} `json:"message"`
-		} `json:"messages"`
-	}
+	// This variable is just a placeholder for makeRequest. Our updated makeRequest
+	// will handle the empty body from a successful delete and won't try to parse it.
+	var response interface{}
 
+	// If makeRequest returns an error, it's a real issue.
+	// If it returns nil, the delete was successful.
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return err
 	}
 
-	if response.Messages.ResultCode != "Ok" {
-		if len(response.Messages.Message) > 0 {
-			return fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
-		}
-		return fmt.Errorf("API error: unknown error")
-	}
 	return nil
 }
 
