@@ -72,7 +72,7 @@ func main() {
 	r.HandleFunc("/transactions", app.chargeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}", app.updateCustomerProfileHandler).Methods("PUT")
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses", app.addShippingAddressHandler).Methods("POST")
-	r.HandleFunc("/customer-profiles/{id}/shipping-addresses/{addressId}", app.addShippingAddressHandler).Methods("DELETE")
+	r.HandleFunc("/customer-profiles/{id}/shipping-addresses/{addressId}", app.deleteShippingAddressHandler).Methods("DELETE")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles", app.addPaymentProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
 	r.HandleFunc("/transactions/authorize", app.authorizeCustomerProfileHandler).Methods("POST")
@@ -310,6 +310,7 @@ func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http
 }
 
 func (app *application) deleteShippingAddressHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Delete Shipping Address Handler")
 	vars := mux.Vars(r)
 	profileId, ok1 := vars["id"]
 	addressId, ok2 := vars["addressId"]
