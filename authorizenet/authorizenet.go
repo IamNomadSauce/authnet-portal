@@ -312,6 +312,7 @@ type CreateTransactionResponse struct {
 }
 
 func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, transactionType string) (*FullTransactionResponse, error) {
+	log.Println("ChargeCustomerProfile")
 
 	finalTransactionType := "authCaptureTransaction"
 	if transactionType == "authOnlyTransaction" {
@@ -347,6 +348,8 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 			TransactionRequest:     transactionRequest,
 		},
 	}
+
+	log.Printf("Backend Charge Request %+v", request)
 	var response CreateTransactionResponse
 	if err := c.makeRequest(request, &response); err != nil {
 		return nil, err

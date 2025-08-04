@@ -191,11 +191,14 @@ func (app *application) getAllCustomerProfilesHandler(w http.ResponseWriter, r *
 }
 
 func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Charge Customer Profile Handler")
 	var req ChargeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("ChargeRequest: %+V", req)
 
 	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
 	if err != nil {
