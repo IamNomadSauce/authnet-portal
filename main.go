@@ -198,7 +198,7 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	log.Printf("ChargeRequest: %+V", req)
+	log.Printf("ChargeRequest: %+v", req)
 
 	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
 	if err != nil {
