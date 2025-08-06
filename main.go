@@ -192,13 +192,25 @@ func (app *application) getAllCustomerProfilesHandler(w http.ResponseWriter, r *
 
 func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Charge Customer Profile Handler")
+
+	// Read the raw body first for logging
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
+		return
+	}
+	// This one log line is the most important debugging tool
+	log.Printf("--- Raw /transactions request body: %s", string(body))
+
 	var req ChargeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// Use bytes.NewReader because the original request body has been read
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
+		log.Printf("!!! Failed to decode JSON body: %v", err) // More detailed log
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("ChargeRequest: %+v", req)
+	log.Printf("Successfully decoded ChargeRequest: %+v", req)
 
 	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
 	if err != nil {
