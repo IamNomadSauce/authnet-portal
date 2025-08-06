@@ -269,14 +269,14 @@ type Order struct {
 type TransactionRequestType struct {
 	TransactionType string `json:"transactionType"`
 	Amount          string `json:"amount"`
-	Order           *Order `json:"order,omitempty"`
-	RefTransId      string `json:"refTransId,omitempty"`
 	Profile         struct {
 		CustomerProfileID string `json:"customerProfileId"`
 		PaymentProfile    struct {
 			PaymentProfileId string `json:"paymentProfileId"`
 		} `json:"paymentProfile"`
 	} `json:"profile"`
+	Order      *Order `json:"order,omitempty"`
+	RefTransId string `json:"refTransId,omitempty"`
 }
 
 type FullTransactionResponse struct {
