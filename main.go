@@ -84,6 +84,13 @@ func main() {
 	}
 }
 
+type ApiResponse struct {
+	IsSuccess   bool                                  `json:"is_success"`
+	Message     string                                `json:"message"`
+	Action      string                                `json:"action,omitempty"`
+	Transaction *authorizenet.FullTransactionResponse `json:"transaction,omitempty"`
+}
+
 type CreateProfileRequest struct {
 	Profile        authorizenet.CustomerProfile `json:"profile"`
 	ValidationMode string                       `json:"validationMode"`
@@ -193,19 +200,16 @@ func (app *application) getAllCustomerProfilesHandler(w http.ResponseWriter, r *
 func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Charge Customer Profile Handler")
 
-	// Read the raw body first for logging
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
 		return
 	}
-	// This one log line is the most important debugging tool
 	log.Printf("--- Raw /transactions request body: %s", string(body))
 
 	var req ChargeRequest
-	// Use bytes.NewReader because the original request body has been read
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-		log.Printf("!!! Failed to decode JSON body: %v", err) // More detailed log
+		log.Printf("!!! Failed to decode JSON body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -213,14 +217,31 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 	log.Printf("Successfully decoded ChargeRequest: %+v", req)
 
 	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
+
+	w.Header().Set("Content-Type", "application/json")
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ApiResponse{
+			IsSuccess: false,
+			Message:   err.Error(),
+		})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// Determine the action for the response
+	action := "authCaptureTransaction"
+	if req.TransactionType == "authOnlyTransaction" {
+		action = "authOnlyTransaction"
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(transactionResponse)
+	json.NewEncoder(w).Encode(ApiResponse{
+		IsSuccess:   true,
+		Message:     "Transaction successful.",
+		Action:      action,
+		Transaction: transactionResponse,
+	})
 }
 
 func (app *application) authorizeCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
@@ -233,15 +254,30 @@ func (app *application) authorizeCustomerProfileHandler(w http.ResponseWriter, r
 		http.Error(w, "Missing required fields: profileId, paymentProfileId, or amount", http.StatusBadRequest)
 		return
 	}
-	transID, err := app.client.AuthorizeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount)
+
+	// The function now returns the full transaction response object
+	fullResponse, err := app.client.AuthorizeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount)
+
+	w.Header().Set("Content-Type", "application/json")
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// On error, send a structured error response
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ApiResponse{
+			IsSuccess: false,
+			Message:   err.Error(),
+		})
 		return
 	}
-	response := map[string]string{"transactionId": transID}
-	w.Header().Set("Content-Type", "application/json")
+
+	// On success, send a structured success response
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(ApiResponse{
+		IsSuccess:   true,
+		Message:     "Transaction authorized successfully.",
+		Action:      "AUTH_ONLY",
+		Transaction: fullResponse,
+	})
 }
 
 func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter, r *http.Request) {
@@ -254,15 +290,28 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		http.Error(w, "Missing required field: refTransId", http.StatusBadRequest)
 		return
 	}
-	transID, err := app.client.CapturePriorAuthTransaction(req.RefTransId, req.Amount)
+
+	// This function also returns the full response now
+	fullResponse, err := app.client.CapturePriorAuthTransaction(req.RefTransId, req.Amount)
+
+	w.Header().Set("Content-Type", "application/json")
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ApiResponse{
+			IsSuccess: false,
+			Message:   err.Error(),
+		})
 		return
 	}
-	response := map[string]string{"transactionId": transID}
-	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(ApiResponse{
+		IsSuccess:   true,
+		Message:     "Previously authorized transaction captured successfully.",
+		Action:      "priorAuthCaptureTransaction",
+		Transaction: fullResponse,
+	})
 }
 
 func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {

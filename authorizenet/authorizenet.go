@@ -363,7 +363,7 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 	return &response.TransactionResponse, nil
 }
 
-func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (string, error) {
+func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (*FullTransactionResponse, error) {
 	transactionRequst := TransactionRequestType{
 		TransactionType: "authOnlyTransaction",
 		Amount:          amount,
@@ -393,18 +393,18 @@ func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount
 
 	var response CreateTransactionResponse
 	if err := c.makeRequest(request, &response); err != nil {
-		return "", err
+		return nil, err
 	}
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
-		return "", fmt.Errorf("API error: unknown error")
+		return nil, fmt.Errorf("API error: unknown error")
 	}
-	return response.TransactionResponse.TransId, nil
+	return &response.TransactionResponse, nil
 }
 
-func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (string, error) {
+func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (*FullTransactionResponse, error) {
 	transactionRequest := TransactionRequestType{
 		TransactionType: "priorAuthCaptureTransaction",
 		RefTransId:      refTransId,
@@ -422,16 +422,16 @@ func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (stri
 
 	var response CreateTransactionResponse
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
-			return "", fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
-		return "", fmt.Errorf("API error: unknown error")
+		return nil, fmt.Errorf("API error: unknown error")
 	}
-	return response.TransactionResponse.TransId, nil
+	return &response.TransactionResponse, nil
 }
 
 type UpdateableProfileData struct {
