@@ -220,6 +220,7 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 
 	w.Header().Set("Content-Type", "application/json")
 
+	// Handle errors by sending the standard ApiResponse
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ApiResponse{
@@ -235,6 +236,7 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 		action = "authOnlyTransaction"
 	}
 
+	// On success, wrap the result in the standard ApiResponse
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(ApiResponse{
 		IsSuccess:   true,
