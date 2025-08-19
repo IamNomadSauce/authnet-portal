@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/handlers"
+	_ "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
 	"database/sql"
-	_ "github.com/lib/pq"
 
+	_ "github.com/lib/pq"
 )
 
 type authNetConfig struct {
@@ -84,6 +86,12 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+
+	allowedOrigins := handlers.AllowedOrigins([]string{"https://www.handbellworld.com"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	corsHandler := handlers.CORS(allowedOrigins, allowedMethods, allowedHeaders)(r)
+
 	r.HandleFunc("/customer-profiles", app.createCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}", app.getCustomerProfileHandler).Methods("GET")
 	r.HandleFunc("/customer-profiles", app.getAllCustomerProfilesHandler).Methods("GET")
@@ -97,7 +105,7 @@ func main() {
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
 	log.Println("Server starting on :1337")
-	if err := http.ListenAndServeTLS(":1337", "cert.pem", "key.pem", r); err != nil {
+	if err := http.ListenAndServeTLS(":1337", "cert.pem", "key.pem", corsHandler); err != nil {
 		log.Fatal(err)
 	}
 }
