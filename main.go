@@ -342,15 +342,18 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		return
 	}
 
-	refTransId := req.RefTransId
+	originalTransId := req.RefTransId
+	newTransId := fullResponse.TransId
 
 	stmt := `
 		UPDATE header
-		SET authorizenet_results = authorizenet_results || '|' || $1
-		WHERE transactionnum = $2;
+			SET authorizenet_results = authorizenet_results || '|' || $1,
+			authorizenet_ts = now(),
+			transactionnum = $2,
+		WHERE transactionnum = $3;
 	`
 
-	_, dbErr := app.db.Exec(stmt, string(responseBytes), refTransId)
+	_, dbErr := app.db.Exec(stmt, string(responseBytes), newTransId, originalTransId)
 
 	if dbErr != nil {
 		log.Printf("Database update failed: %v", dbErr)
@@ -362,7 +365,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		return
 	}
 
-	log.Printf("Successfully updated order record for transaction %s", refTransId)
+	log.Printf("Successfully updated order record for transaction %s", originalTransId)
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseBytes)
