@@ -11,7 +11,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	// "golang.org/x/crypto/nacl/auth"
+
+	"database/sql"
+	_ "github.com/lib/pq"
+
 )
 
 type authNetConfig struct {
@@ -28,6 +31,7 @@ type config struct {
 type application struct {
 	config *config
 	client *authorizenet.APIClient
+	db *sql.DB
 }
 
 func main() {
@@ -54,6 +58,19 @@ func main() {
 		cfg.AuthNet.Endpoint = authorizenet.SandboxEndpoint
 	}
 
+	db_dsn := os.Getenv("DB_DSN")
+	if db_dsn == "" {
+		log.Fatal("Missing DB_DSN")
+	}
+
+	db, err := sql.Open("postgres", db_dsn)
+	if err != nil {
+		log.Fatalf("Cannot connect to database: %v", err)
+	}
+	defer db.Close()
+
+	log.Println("Database connected")
+
 	client := authorizenet.NewAPIClient(
 		cfg.AuthNet.LoginID,
 		cfg.AuthNet.TransactionKey,
@@ -63,6 +80,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		client: client,
+		db: db,
 	}
 
 	r := mux.NewRouter()
@@ -288,6 +306,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	log.Printf("Handler:Capture Prior Auth Transaction %+v", req)
 	if req.RefTransId == "" {
 		http.Error(w, "Missing required field: refTransId", http.StatusBadRequest)
 		return
