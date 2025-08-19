@@ -326,13 +326,46 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(ApiResponse{
-		IsSuccess:   true,
-		Message:     "Previously authorized transaction captured successfully.",
-		Action:      "priorAuthCaptureTransaction",
+	responseBytes, err := json.Marshal(ApiResponse{
+		IsSuccess: true,
+		Message: "Previously authorized transaction captured successfully.",
+		Action: "priorAuthCaptureTransaction",
 		Transaction: fullResponse,
 	})
+	if err != nil {
+		log.Printf("Failed to carshal capture response: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ApiResponse{
+			IsSuccess: false,
+			Message: "Failed to process transaction response internally.",
+		})
+		return
+	}
+
+	refTransId := req.RefTransId
+
+	stmt := `
+		UPDATE header
+		SET authorizenet_results = authorizenet_results || '|' || $1
+		WHERE transactionnum = $2;
+	`
+
+	_, dbErr := app.db.Exec(stmt, string(responseBytes), refTransId)
+
+	if dbErr != nil {
+		log.Printf("Database update failed: %v", dbErr)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ApiResponse{
+			IsSuccess: false,
+			Message: "CRITICAL:Payment was processed but failed to update order record.",
+		})
+		return
+	}
+
+	log.Printf("Successfully updated order record for transaction %s", refTransId)
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write(responseBytes)
 }
 
 func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
