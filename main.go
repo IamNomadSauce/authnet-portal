@@ -314,7 +314,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Handler:Capture Prior Auth Transaction %+v", req)
+	log.Printf("Version 2 Handler:Capture Prior Auth Transaction %+v", req)
 	if req.RefTransId == "" {
 		// Add a version marker to the error message
 		http.Error(w, "V2 Error: Missing required field: refTransId", http.StatusBadRequest)
