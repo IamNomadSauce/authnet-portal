@@ -357,7 +357,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		UPDATE header
 			SET authorizenet_results = authorizenet_results || '|' || $1,
 			authorizenet_ts = now(),
-			transactionnum = $2,
+			transactionnum = $2
 		WHERE transactionnum = $3;
 	`
 
