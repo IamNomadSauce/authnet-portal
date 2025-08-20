@@ -405,33 +405,34 @@ func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount
 }
 
 func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (*FullTransactionResponse, error) {
-	transactionRequest := TransactionRequestType{
-		TransactionType: "priorAuthCaptureTransaction",
-		RefTransId:      refTransId,
-		Amount:          amount,
-	}
+    // This request does NOT include the customer profile.
+    transactionRequest := TransactionRequestType{
+        TransactionType: "priorAuthCaptureTransaction",
+        RefTransId:      refTransId,
+        Amount:          amount,
+    }
 
-	requestWrapper := struct {
-		CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
-	}{
-		CreateTransactionRequest: CreateTransactionRequest{
-			MerchantAuthentication: c.Auth,
-			TransactionRequest:     transactionRequest,
-		},
-	}
+    requestWrapper := struct {
+        CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
+    }{
+        CreateTransactionRequest: CreateTransactionRequest{
+            MerchantAuthentication: c.Auth,
+            TransactionRequest:     transactionRequest,
+        },
+    }
 
-	var response CreateTransactionResponse
-	if err := c.makeRequest(requestWrapper, &response); err != nil {
-		return nil, err
-	}
+    var response CreateTransactionResponse
+    if err := c.makeRequest(requestWrapper, &response); err != nil {
+        return nil, err
+    }
 
-	if response.Messages.ResultCode != "Ok" {
-		if len(response.Messages.Message) > 0 {
-			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
-		}
-		return nil, fmt.Errorf("API error: unknown error")
-	}
-	return &response.TransactionResponse, nil
+    if response.Messages.ResultCode != "Ok" {
+        if len(response.Messages.Message) > 0 {
+            return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+        }
+        return nil, fmt.Errorf("API error: unknown error")
+    }
+    return &response.TransactionResponse, nil
 }
 
 type UpdateableProfileData struct {
