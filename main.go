@@ -133,8 +133,6 @@ type ChargeRequest struct {
 type CaptureRequest struct {
 	RefTransId string `json:"refTransId"`
 	Amount     string `json:"amount,omitempty"`
-	CustomerProfileId string `json:"customerProfileId"`
-	PaymentProfileId string `json:"paymentProfileId"`
 }
 
 type UpdateProfileRequest struct {
@@ -317,20 +315,13 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		return
 	}
 	log.Printf("Handler:Capture Prior Auth Transaction %+v", req)
-
-	if req.RefTransId == "" || req.CustomerProfileId == "" || req.PaymentProfileId == "" {
-		log.Println("Error: missing required fields")
-		http.Error(w, "Missing required fields: refTransId, customerProfileId, paymentProfileId", http.StatusBadRequest)
+	if req.RefTransId == "" {
+		http.Error(w, "Missing required field: refTransId", http.StatusBadRequest)
 		return
 	}
 
 	// This function also returns the full response now
-	fullResponse, err := app.client.CapturePriorAuthTransaction(
-		req.RefTransId, 
-		req.Amount,
-		req.CustomerProfileId,
-		req.PaymentProfileId,
-		)
+	fullResponse, err := app.client.CapturePriorAuthTransaction(req.RefTransId, req.Amount)
 
 	w.Header().Set("Content-Type", "application/json")
 

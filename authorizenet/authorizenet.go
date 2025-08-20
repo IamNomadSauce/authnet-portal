@@ -404,25 +404,13 @@ func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount
 	return &response.TransactionResponse, nil
 }
 
-func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount, customerProfileId, paymentProfileId string) (*FullTransactionResponse, error) {
+func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (*FullTransactionResponse, error) {
 	transactionRequest := TransactionRequestType{
 		TransactionType: "priorAuthCaptureTransaction",
 		RefTransId:      refTransId,
 		Amount:          amount,
-		Profile: struct { // ADD THIS PROFILE STRUCT
-		    CustomerProfileID string `json:"customerProfileId"`
-		    PaymentProfile  struct {
-			PaymentProfileId string `json:"paymentProfileId"`
-		    } `json:"paymentProfile"`
-		}{
-		    CustomerProfileID: customerProfileId,
-		    PaymentProfile: struct {
-			PaymentProfileId string `json:"paymentProfileId"`
-		    }{
-			PaymentProfileId: paymentProfileId,
-		    },
-		},
-    	}
+	}
+
 	requestWrapper := struct {
 		CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
 	}{
