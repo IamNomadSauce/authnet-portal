@@ -316,10 +316,10 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 	}
 	log.Printf("Handler:Capture Prior Auth Transaction %+v", req)
 	if req.RefTransId == "" {
-		http.Error(w, "Missing required field: refTransId", http.StatusBadRequest)
+		// Add a version marker to the error message
+		http.Error(w, "V2 Error: Missing required field: refTransId", http.StatusBadRequest)
 		return
 	}
-
 	// This function also returns the full response now
 	fullResponse, err := app.client.CapturePriorAuthTransaction(req.RefTransId, req.Amount)
 
