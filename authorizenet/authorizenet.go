@@ -319,22 +319,24 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 		finalTransactionType = "authOnlyTransaction"
 	}
 
+	profileData := &struct { 
+	    CustomerProfileID string `json:"customerProfileId"`
+	    PaymentProfile  struct {
+		PaymentProfileId string `json:"paymentProfileId"`
+	    } `json:"paymentProfile"`
+	}{
+	    CustomerProfileID: profileID,
+	    PaymentProfile: struct {
+		PaymentProfileId string `json:"paymentProfileId"`
+	    }{
+		PaymentProfileId: paymentProfileID,
+	    },
+	}
+
 	transactionRequest := TransactionRequestType{
-		TransactionType: finalTransactionType,
-		Amount:          amount,
-		Profile: struct {
-			CustomerProfileID string `json:"customerProfileId"`
-			PaymentProfile    struct {
-				PaymentProfileId string `json:"paymentProfileId"`
-			} `json:"paymentProfile"`
-		}{
-			CustomerProfileID: profileID,
-			PaymentProfile: struct {
-				PaymentProfileId string `json:"paymentProfileId"`
-			}{
-				PaymentProfileId: paymentProfileID,
-			},
-		},
+	    TransactionType: finalTransactionType,
+	    Amount:          amount,
+	    Profile:         profileData,
 	}
 	if invoiceNumber != "" {
 		transactionRequest.Order = &Order{InvoiceNumber: invoiceNumber}
@@ -364,23 +366,25 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 }
 
 func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (*FullTransactionResponse, error) {
-	transactionRequst := TransactionRequestType{
-		TransactionType: "authOnlyTransaction",
-		Amount:          amount,
-		Profile: struct {
-			CustomerProfileID string `json:"customerProfileId"`
-			PaymentProfile    struct {
-				PaymentProfileId string `json:"paymentProfileId"`
-			} `json:"paymentProfile"`
-		}{
-			CustomerProfileID: profileID,
-			PaymentProfile: struct {
-				PaymentProfileId string `json:"paymentProfileId"`
-			}{
-				PaymentProfileId: paymentProfileID,
-			},
-		},
+	profileData := &struct { 
+	    CustomerProfileID string `json:"customerProfileId"`
+	    PaymentProfile  struct {
+		PaymentProfileId string `json:"paymentProfileId"`
+	    } `json:"paymentProfile"`
+	}{
+	    CustomerProfileID: profileID,
+	    PaymentProfile: struct {
+		PaymentProfileId string `json:"paymentProfileId"`
+	    }{
+		PaymentProfileId: paymentProfileID,
+	    },
 	}
+
+transactionRequst := TransactionRequestType{
+    TransactionType: "authOnlyTransaction",
+    Amount:          amount,
+    Profile:         profileData, // <--- Assign the pointer
+}
 
 	request := struct {
 		Request CreateTransactionRequest `json:"createTransactionRequest"`
