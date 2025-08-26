@@ -80,6 +80,7 @@ type CustomerProfile struct {
 	MerchantCustomerId string            `json:"merchantCustomerId,omitempty"`
 	Description        string            `json:"description"`
 	Email              string            `json:"email"`
+	CustomerType string `json:"customerType"`
 	PaymentProfiles    []PaymentProfile  `json:"paymentProfiles,omitempty"`
 	ShipToList         []ShippingAddress `json:"shipToList,omitempty"`
 }
