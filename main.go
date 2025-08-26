@@ -153,6 +153,7 @@ type UpdateBillingAddressRequest struct {
 }
 
 func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Print("Create New Customer Profile Handler")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
