@@ -631,7 +631,7 @@ type Payment struct {
 
 type PaymentProfile struct {
 	CustomerPaymentProfileId string           `json:"customerPaymentProfileId,omitempty"`
-	CustomerType             string           `json:"customerType"`
+	CustomerType             string           `json:"customerType,omitempty"`
 	BillTo                   *ShippingAddress `json:"billTo,omitempty"`
 	Payment                  Payment          `json:"payment"`
 }
