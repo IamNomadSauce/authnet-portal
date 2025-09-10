@@ -327,7 +327,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
-		log.Printf("Error Capturing Prior Auth Transaction: %+v", err)
+		log.Printf("Error Capturing Prior Auth Transaction: %+v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ApiResponse{
 			IsSuccess: false,
