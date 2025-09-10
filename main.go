@@ -33,7 +33,7 @@ type config struct {
 type application struct {
 	config *config
 	client *authorizenet.APIClient
-	db *sql.DB
+	db     *sql.DB
 }
 
 func main() {
@@ -82,7 +82,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		client: client,
-		db: db,
+		db:     db,
 	}
 
 	r := mux.NewRouter()
@@ -327,6 +327,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
+		log.Printf("Error Capturing Prior Auth Transaction: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ApiResponse{
 			IsSuccess: false,
@@ -336,9 +337,9 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 	}
 
 	responseBytes, err := json.Marshal(ApiResponse{
-		IsSuccess: true,
-		Message: "Previously authorized transaction captured successfully.",
-		Action: "priorAuthCaptureTransaction",
+		IsSuccess:   true,
+		Message:     "Previously authorized transaction captured successfully.",
+		Action:      "priorAuthCaptureTransaction",
 		Transaction: fullResponse,
 	})
 	if err != nil {
@@ -346,7 +347,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ApiResponse{
 			IsSuccess: false,
-			Message: "Failed to process transaction response internally.",
+			Message:   "Failed to process transaction response internally.",
 		})
 		return
 	}
@@ -369,7 +370,7 @@ func (app *application) capturePriorAuthTransactionHandler(w http.ResponseWriter
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ApiResponse{
 			IsSuccess: false,
-			Message: "CRITICAL:Payment was processed but failed to update order record.",
+			Message:   "CRITICAL:Payment was processed but failed to update order record.",
 		})
 		return
 	}
