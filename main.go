@@ -160,7 +160,7 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	log.Printf("Received raw JSON payload: %s", string(body))
+	// log.Printf("Received raw JSON payload: %s", string(body))
 
 	var req CreateProfileRequest
 
