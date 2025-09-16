@@ -80,7 +80,7 @@ type CustomerProfile struct {
 	MerchantCustomerId string            `json:"merchantCustomerId,omitempty"`
 	Description        string            `json:"description"`
 	Email              string            `json:"email"`
-	ProfileType string `json:"profileType,omitempty"`
+	ProfileType        string            `json:"profileType,omitempty"`
 	PaymentProfiles    []PaymentProfile  `json:"paymentProfiles,omitempty"`
 	ShipToList         []ShippingAddress `json:"shipToList,omitempty"`
 }
@@ -268,16 +268,16 @@ type Order struct {
 }
 
 type TransactionRequestType struct {
-    TransactionType string `json:"transactionType"`
-    Amount          string `json:"amount"`
-    Profile         *struct { 
-        CustomerProfileID string `json:"customerProfileId"`
-        PaymentProfile  struct {
-            PaymentProfileId string `json:"paymentProfileId"`
-        } `json:"paymentProfile"`
-    } `json:"profile,omitempty"` 
-    Order           *Order `json:"order,omitempty"`
-    RefTransId      string `json:"refTransId,omitempty"`
+	TransactionType string `json:"transactionType"`
+	Amount          string `json:"amount"`
+	Profile         *struct {
+		CustomerProfileID string `json:"customerProfileId"`
+		PaymentProfile    struct {
+			PaymentProfileId string `json:"paymentProfileId"`
+		} `json:"paymentProfile"`
+	} `json:"profile,omitempty"`
+	Order      *Order `json:"order,omitempty"`
+	RefTransId string `json:"refTransId,omitempty"`
 }
 
 type FullTransactionResponse struct {
@@ -320,24 +320,24 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 		finalTransactionType = "authOnlyTransaction"
 	}
 
-	profileData := &struct { 
-	    CustomerProfileID string `json:"customerProfileId"`
-	    PaymentProfile  struct {
-		PaymentProfileId string `json:"paymentProfileId"`
-	    } `json:"paymentProfile"`
+	profileData := &struct {
+		CustomerProfileID string `json:"customerProfileId"`
+		PaymentProfile    struct {
+			PaymentProfileId string `json:"paymentProfileId"`
+		} `json:"paymentProfile"`
 	}{
-	    CustomerProfileID: profileID,
-	    PaymentProfile: struct {
-		PaymentProfileId string `json:"paymentProfileId"`
-	    }{
-		PaymentProfileId: paymentProfileID,
-	    },
+		CustomerProfileID: profileID,
+		PaymentProfile: struct {
+			PaymentProfileId string `json:"paymentProfileId"`
+		}{
+			PaymentProfileId: paymentProfileID,
+		},
 	}
 
 	transactionRequest := TransactionRequestType{
-	    TransactionType: finalTransactionType,
-	    Amount:          amount,
-	    Profile:         profileData,
+		TransactionType: finalTransactionType,
+		Amount:          amount,
+		Profile:         profileData,
 	}
 	if invoiceNumber != "" {
 		transactionRequest.Order = &Order{InvoiceNumber: invoiceNumber}
@@ -359,33 +359,35 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 	}
 	if response.Messages.ResultCode != "Ok" {
 		if len(response.Messages.Message) > 0 {
+			log.Printf("Error charging customer profile, %s", response.Messages.Message[0].Text)
 			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
 		}
+		log.Println("API Error: unknown error")
 		return nil, fmt.Errorf("API error: unknown error")
 	}
 	return &response.TransactionResponse, nil
 }
 
 func (c *APIClient) AuthorizeCustomerProfile(profileID, paymentProfileID, amount string) (*FullTransactionResponse, error) {
-	profileData := &struct { 
-	    CustomerProfileID string `json:"customerProfileId"`
-	    PaymentProfile  struct {
-		PaymentProfileId string `json:"paymentProfileId"`
-	    } `json:"paymentProfile"`
+	profileData := &struct {
+		CustomerProfileID string `json:"customerProfileId"`
+		PaymentProfile    struct {
+			PaymentProfileId string `json:"paymentProfileId"`
+		} `json:"paymentProfile"`
 	}{
-	    CustomerProfileID: profileID,
-	    PaymentProfile: struct {
-		PaymentProfileId string `json:"paymentProfileId"`
-	    }{
-		PaymentProfileId: paymentProfileID,
-	    },
+		CustomerProfileID: profileID,
+		PaymentProfile: struct {
+			PaymentProfileId string `json:"paymentProfileId"`
+		}{
+			PaymentProfileId: paymentProfileID,
+		},
 	}
 
-transactionRequst := TransactionRequestType{
-    TransactionType: "authOnlyTransaction",
-    Amount:          amount,
-    Profile:         profileData, // <--- Assign the pointer
-}
+	transactionRequst := TransactionRequestType{
+		TransactionType: "authOnlyTransaction",
+		Amount:          amount,
+		Profile:         profileData, // <--- Assign the pointer
+	}
 
 	request := struct {
 		Request CreateTransactionRequest `json:"createTransactionRequest"`
@@ -410,34 +412,34 @@ transactionRequst := TransactionRequestType{
 }
 
 func (c *APIClient) CapturePriorAuthTransaction(refTransId, amount string) (*FullTransactionResponse, error) {
-    // This request does NOT include the customer profile.
-    transactionRequest := TransactionRequestType{
-        TransactionType: "priorAuthCaptureTransaction",
-        RefTransId:      refTransId,
-        Amount:          amount,
-    }
+	// This request does NOT include the customer profile.
+	transactionRequest := TransactionRequestType{
+		TransactionType: "priorAuthCaptureTransaction",
+		RefTransId:      refTransId,
+		Amount:          amount,
+	}
 
-    requestWrapper := struct {
-        CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
-    }{
-        CreateTransactionRequest: CreateTransactionRequest{
-            MerchantAuthentication: c.Auth,
-            TransactionRequest:     transactionRequest,
-        },
-    }
+	requestWrapper := struct {
+		CreateTransactionRequest CreateTransactionRequest `json:"createTransactionRequest"`
+	}{
+		CreateTransactionRequest: CreateTransactionRequest{
+			MerchantAuthentication: c.Auth,
+			TransactionRequest:     transactionRequest,
+		},
+	}
 
-    var response CreateTransactionResponse
-    if err := c.makeRequest(requestWrapper, &response); err != nil {
-        return nil, err
-    }
+	var response CreateTransactionResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return nil, err
+	}
 
-    if response.Messages.ResultCode != "Ok" {
-        if len(response.Messages.Message) > 0 {
-            return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
-        }
-        return nil, fmt.Errorf("API error: unknown error")
-    }
-    return &response.TransactionResponse, nil
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return nil, fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return nil, fmt.Errorf("API error: unknown error")
+	}
+	return &response.TransactionResponse, nil
 }
 
 type UpdateableProfileData struct {
