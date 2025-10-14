@@ -127,6 +127,7 @@ type ChargeRequest struct {
 	PaymentProfileID string `json:"paymentProfileId"`
 	Amount           string `json:"amount"`
 	InvoiceNumber    string `json:"invoiceNumber,omitempty"`
+	Description      string `json:"description,omitempty"`
 	TransactionType  string `json:"transactionType,omitempty"`
 }
 
@@ -243,7 +244,7 @@ func (app *application) chargeCustomerProfileHandler(w http.ResponseWriter, r *h
 
 	log.Printf("Successfully decoded ChargeRequest: %+v", req)
 
-	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType)
+	transactionResponse, err := app.client.ChargeCustomerProfile(req.ProfileID, req.PaymentProfileID, req.Amount, req.InvoiceNumber, req.TransactionType, req.Description)
 
 	w.Header().Set("Content-Type", "application/json")
 

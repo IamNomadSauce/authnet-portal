@@ -312,7 +312,7 @@ type CreateTransactionResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, transactionType string) (*FullTransactionResponse, error) {
+func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, description, transactionType string) (*FullTransactionResponse, error) {
 	log.Println("ChargeCustomerProfile")
 
 	finalTransactionType := "authCaptureTransaction"
@@ -340,7 +340,10 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 		Profile:         profileData,
 	}
 	if invoiceNumber != "" {
-		transactionRequest.Order = &Order{InvoiceNumber: invoiceNumber}
+		transactionRequest.Order = &Order{
+			InvoiceNumber: invoiceNumber,
+			Description:   description,
+		}
 	}
 
 	request := struct {
