@@ -313,8 +313,8 @@ type CreateTransactionResponse struct {
 	} `json:"messages"`
 }
 
-func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, description, transactionType string) (*FullTransactionResponse, error) {
-	log.Printf("ChargeCustomerProfile %s %s %s %s %s %s", profileID, paymentProfileID, amount, invoiceNumber, description, transactionType)
+func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, transactionType, description string) (*FullTransactionResponse, error) {
+	log.Printf("ChargeCustomerProfile %s %s %s %s %s |%s|", profileID, paymentProfileID, amount, invoiceNumber, description, transactionType)
 
 	finalTransactionType := "authCaptureTransaction"
 	if transactionType == "authOnlyTransaction" {
