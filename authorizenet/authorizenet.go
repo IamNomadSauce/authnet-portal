@@ -356,8 +356,8 @@ func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, i
 		},
 	}
 
-	// log.Printf("Backend Charge Request %+v", request)
-	log.Println("Backend Charge Request")
+	log.Printf("Backend Charge Request %+v", request)
+	// log.Println("Backend Charge Request")
 	var response CreateTransactionResponse
 	if err := c.makeRequest(request, &response); err != nil {
 		return nil, err
