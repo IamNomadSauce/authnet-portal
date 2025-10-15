@@ -2,6 +2,7 @@ package authorizenet
 
 import (
 	"bytes"
+	// "crypto/des"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -313,7 +314,7 @@ type CreateTransactionResponse struct {
 }
 
 func (c *APIClient) ChargeCustomerProfile(profileID, paymentProfileID, amount, invoiceNumber, description, transactionType string) (*FullTransactionResponse, error) {
-	log.Println("ChargeCustomerProfile")
+	log.Printf("ChargeCustomerProfile %s %s %s %s %s %s", profileID, paymentProfileID, amount, invoiceNumber, description, transactionType)
 
 	finalTransactionType := "authCaptureTransaction"
 	if transactionType == "authOnlyTransaction" {
