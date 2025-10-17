@@ -13,6 +13,7 @@ import (
 	_ "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"strings"
 
 	"database/sql"
 
