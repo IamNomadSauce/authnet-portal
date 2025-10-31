@@ -102,6 +102,7 @@ func main() {
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses/{addressId}", app.deleteShippingAddressHandler).Methods("DELETE")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles", app.addPaymentProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
+	r.HandleFunc("/customer-profiles/{customerProfileId}/payment-profiles/{paymentProfileId}", app.updateCustomerPaymentProfileHandler).Methods("PUT")
 	r.HandleFunc("/transactions/authorize", app.authorizeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
@@ -449,6 +450,30 @@ func (app *application) updateCustomerProfileHandler(w http.ResponseWriter, r *h
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (app *application) updateCustomerPaymentProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	customerProfileId := vars["customerProfileId"]
+	paymentProfileId := vars["paymentProfileId"]
+
+	var req struct {
+		CreditCard authorizenet.CreditCard      `json:"creditCard"`
+		BillTo     authorizenet.ShippingAddress `json:"billTo"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := app.client.UpdateCustomerPaymentProfile(customerProfileId, paymentProfileId, req.CreditCard, req.BillTo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Payment profile updated successfully"})
 }
 
 func (app *application) addShippingAddressHandler(w http.ResponseWriter, r *http.Request) {

@@ -458,6 +458,38 @@ type UpdateCustomerProfileRequest struct {
 	Profile                UpdateableProfileData  `json:"profile"`
 }
 
+func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, customerProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
+	requestWrapper := struct {
+		Request UpdateCustomerPaymentProfileRequest `json:"updateCustomerPaymentProfileRequest"`
+	}{
+		Request: UpdateCustomerPaymentProfileRequest{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      customerProfileId,
+			PaymentProfile: PaymentProfile{
+				CustomerPaymentProfileId: customerPaymentProfileId,
+				BillTo:                   &billTo,
+				Payment: Payment{
+					CreditCard: creditCard,
+				},
+			},
+		},
+	}
+
+	var response UpdateCustomerPaymentProfileResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
+		}
+		return fmt.Errorf("API error: update payment profile failed with ResultCode: '%s'", response.Messages.ResultCode)
+	}
+
+	return nil
+}
+
 func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) error {
 	requestWrapper := struct {
 		Request UpdateCustomerProfileRequest `json:"updateCustomerProfileRequest"`
