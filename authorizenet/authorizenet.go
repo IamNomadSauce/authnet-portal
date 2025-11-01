@@ -471,7 +471,6 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 				},
 				CustomerPaymentProfileId: customerPaymentProfileId,
 				BillTo:                   &billTo,
-				// Omit CustomerType - it's only for create, not update
 			},
 		},
 	}
@@ -673,10 +672,10 @@ type Payment struct {
 }
 
 type PaymentProfile struct {
+	Payment                  Payment          `json:"payment,omitempty"`
 	CustomerPaymentProfileId string           `json:"customerPaymentProfileId,omitempty"`
-	CustomerType             string           `json:"customerType,omitempty"`
 	BillTo                   *ShippingAddress `json:"billTo,omitempty"`
-	Payment                  Payment          `json:"payment"`
+	// Omit CustomerType for update - it's only for create
 }
 
 type CreateCustomerPaymentProfileRequest struct {
