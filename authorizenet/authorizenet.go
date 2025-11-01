@@ -458,7 +458,7 @@ type UpdateCustomerProfileRequest struct {
 	Profile                UpdateableProfileData  `json:"profile"`
 }
 
-func (c *APIClient) UpdateCustomerPaymentProfile(customerProfileId, customerPaymentProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
+func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, customerProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
 	requestWrapper := struct {
 		Request UpdateCustomerPaymentProfileRequest `json:"updateCustomerPaymentProfileRequest"`
 	}{
@@ -466,11 +466,12 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerProfileId, customerPaym
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
 			PaymentProfile: PaymentProfile{
-				CustomerPaymentProfileId: customerPaymentProfileId,
-				BillTo:                   &billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
+				DefaultPaymentProfile:    false, // Required for schema order in update
+				CustomerPaymentProfileId: customerPaymentProfileId,
+				BillTo:                   &billTo,
 			},
 		},
 	}
@@ -674,8 +675,9 @@ type Payment struct {
 type PaymentProfile struct {
 	Payment                  Payment          `json:"payment,omitempty"`
 	CustomerPaymentProfileId string           `json:"customerPaymentProfileId,omitempty"`
+	DefaultPaymentProfile    bool             `json:"defaultPaymentProfile,omitempty"`
 	BillTo                   *ShippingAddress `json:"billTo,omitempty"`
-	// Omit CustomerType for update - it's only for create
+	CustomerType             string           `json:"customerType,omitempty"` // Optional, omit for update if needed
 }
 
 type CreateCustomerPaymentProfileRequest struct {
