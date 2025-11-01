@@ -466,6 +466,7 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
 			PaymentProfile: PaymentProfile{
+				CustomerType:             "individual",
 				CustomerPaymentProfileId: customerPaymentProfileId,
 				BillTo:                   &billTo,
 				Payment: Payment{
