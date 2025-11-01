@@ -91,7 +91,31 @@ func main() {
 	allowedOrigins := handlers.AllowedOrigins([]string{"https://www.handbellworld.com"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
 	allowedHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+
+	// Global logging middleware: Logs EVERY request (method, path, body for POST/PUT)
+	loggingMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("=== GLOBAL LOG: Incoming request === Method: %s | Path: %s | From: %s | User-Agent: %s", r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+
+			// Log body for POST/PUT (read once, restore for handler)
+			if r.Method == "POST" || r.Method == "PUT" {
+				bodyBytes, err := io.ReadAll(r.Body)
+				if err != nil {
+					log.Printf("!!! Failed to read body: %v", err)
+				} else {
+					log.Printf("Raw body: %s", string(bodyBytes))
+					// Restore body for handler
+					r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+				}
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	// Apply CORS then logging to router
 	corsHandler := handlers.CORS(allowedOrigins, allowedMethods, allowedHeaders)(r)
+	loggingHandler := loggingMiddleware(corsHandler)
 
 	r.HandleFunc("/customer-profiles", app.createCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}", app.getCustomerProfileHandler).Methods("GET")
@@ -110,7 +134,7 @@ func main() {
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
 	log.Println("Server starting on :1337")
-	if err := http.ListenAndServeTLS(":1337", "cert.pem", "key.pem", corsHandler); err != nil {
+	if err := http.ListenAndServeTLS(":1337", "cert.pem", "key.pem", loggingHandler); err != nil {
 		log.Fatal(err)
 	}
 }
