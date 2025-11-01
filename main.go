@@ -457,6 +457,7 @@ func (app *application) updateCustomerPaymentProfileHandler(w http.ResponseWrite
 	vars := mux.Vars(r)
 	customerProfileId := vars["customerProfileId"]
 	paymentProfileId := vars["paymentProfileId"]
+	log.Printf("Update Customer Payment Profile Handler: %+v", vars)
 
 	var req struct {
 		CreditCard authorizenet.CreditCard      `json:"creditCard"`
@@ -541,6 +542,7 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 		http.Error(w, "Missing customer profile ID", http.StatusBadRequest)
 		return
 	}
+	log.Printf("Add Payment Profile Handler: %+v", vars)
 
 	var req AddPaymentProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
