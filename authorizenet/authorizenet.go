@@ -458,7 +458,7 @@ type UpdateCustomerProfileRequest struct {
 	Profile                UpdateableProfileData  `json:"profile"`
 }
 
-func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, customerProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
+func (c *APIClient) UpdateCustomerPaymentProfile(customerProfileId, customerPaymentProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
 	requestWrapper := struct {
 		Request UpdateCustomerPaymentProfileRequest `json:"updateCustomerPaymentProfileRequest"`
 	}{
@@ -466,11 +466,11 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
 			PaymentProfile: PaymentProfile{
+				CustomerPaymentProfileId: customerPaymentProfileId,
+				BillTo:                   &billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
-				CustomerPaymentProfileId: customerPaymentProfileId,
-				BillTo:                   &billTo,
 			},
 		},
 	}

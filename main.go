@@ -497,6 +497,7 @@ func (app *application) updateCustomerPaymentProfileHandler(w http.ResponseWrite
 	}
 
 	err := app.client.UpdateCustomerPaymentProfile(customerProfileId, paymentProfileId, req.CreditCard, req.BillTo)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
