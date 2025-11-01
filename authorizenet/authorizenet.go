@@ -466,12 +466,12 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
 			PaymentProfile: PaymentProfile{
-				CustomerType:             "individual",
 				CustomerPaymentProfileId: customerPaymentProfileId,
 				BillTo:                   &billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
+				// CustomerType optional for update – omit to avoid order/schema issues
 			},
 		},
 	}
