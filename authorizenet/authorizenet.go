@@ -721,3 +721,41 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, b
 	}
 	return response.CustomerPaymentProfileId, nil
 }
+
+type DeleteCustomerPaymentProfileRequest struct {
+	MerchantAuthentication   MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId        string                 `json:"customerProfileId"`
+	CustomerPaymentProfileId string                 `json:"customerPaymentProfileId"`
+}
+
+func (c *APIClient) DeleteCustomerPaymentProfile(customerProfileId, customerPaymentProfileId string) error {
+	requestWrapper := struct {
+		Request DeleteCustomerPaymentProfileRequest `json:"deleteCustomerPaymentProfileRequest"`
+	}{
+		Request: DeleteCustomerPaymentProfileRequest{
+			MerchantAuthentication:   c.Auth,
+			CustomerProfileId:        customerProfileId,
+			CustomerPaymentProfileId: customerPaymentProfileId,
+		},
+	}
+
+	var response struct {
+		Messages struct {
+			ResultCode string `json:"resultCode"`
+			Message    []struct {
+				Code string `json:"code"`
+				Text string `json:"text"`
+			} `json:"message"`
+		} `json:"messages"`
+	}
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
+		}
+		return fmt.Errorf("API error: unknown error")
+	}
+	return nil
+}
