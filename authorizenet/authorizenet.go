@@ -682,7 +682,8 @@ type CreateCustomerPaymentProfileRequest struct {
 	PaymentProfile         PaymentProfile         `json:"paymentProfile"`
 }
 
-func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, billTo ShippingAddress) (string, error) {
+func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, billTo *ShippingAddress) (string, error) {
+	log.Printf("Add Payment Profile: %s %s %v", profileID, creditCard, billTo)
 	requestWrapper := struct {
 		Request CreateCustomerPaymentProfileRequest `json:"createCustomerPaymentProfileRequest"`
 	}{
@@ -690,7 +691,8 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, b
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      profileID,
 			PaymentProfile: PaymentProfile{
-				BillTo: &billTo,
+
+				BillTo: billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
