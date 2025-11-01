@@ -470,13 +470,15 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 					CreditCard: creditCard,
 				},
 				CustomerPaymentProfileId: customerPaymentProfileId,
-				CustomerType:             "individual",
 				BillTo:                   &billTo,
+				// Omit CustomerType - it's only for create, not update
 			},
 		},
 	}
 
 	var response UpdateCustomerPaymentProfileResponse
+	jsonData, _ := json.Marshal(requestWrapper)
+	log.Printf("Update Request JSON: %s", string(jsonData))
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return err
 	}
