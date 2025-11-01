@@ -144,7 +144,8 @@ type UpdateProfileRequest struct {
 }
 
 type AddPaymentProfileRequest struct {
-	CreditCard authorizenet.CreditCard `json:"creditCard"`
+	CreditCard authorizenet.CreditCard      `json:"creditCard"`
+	BillTo     authorizenet.ShippingAddress `json:"billTo,omitempty"`
 }
 
 type AddShippingAddressRequest struct {
@@ -547,7 +548,7 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	paymentProfileID, err := app.client.AddPaymentProfile(id, req.CreditCard)
+	paymentProfileID, err := app.client.AddPaymentProfile(id, req.CreditCard, req.BillTo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

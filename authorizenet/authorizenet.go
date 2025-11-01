@@ -662,6 +662,7 @@ func (c *APIClient) UpdateBillingAddress(customerprofileID string, paymentProfil
 type CreditCard struct {
 	CardNumber     string `json:"cardNumber"`
 	ExpirationDate string `json:"expirationDate"`
+	CardCode       string `json:"cardCode,omitempty"`
 }
 
 type Payment struct {
@@ -681,7 +682,7 @@ type CreateCustomerPaymentProfileRequest struct {
 	PaymentProfile         PaymentProfile         `json:"paymentProfile"`
 }
 
-func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (string, error) {
+func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, billTo ShippingAddress) (string, error) {
 	requestWrapper := struct {
 		Request CreateCustomerPaymentProfileRequest `json:"createCustomerPaymentProfileRequest"`
 	}{
@@ -689,6 +690,7 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      profileID,
 			PaymentProfile: PaymentProfile{
+				BillTo: &billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
