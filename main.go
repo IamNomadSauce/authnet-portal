@@ -488,15 +488,16 @@ func (app *application) updateCustomerPaymentProfileHandler(w http.ResponseWrite
 	log.Printf("Update Customer Payment Profile Handler: %+v", vars)
 
 	var req struct {
-		CreditCard authorizenet.CreditCard      `json:"creditCard"`
-		BillTo     authorizenet.ShippingAddress `json:"billTo"`
+		CustomerType string                       `json:"customerType,omitempty"`
+		CreditCard   authorizenet.CreditCard      `json:"creditCard"`
+		BillTo       authorizenet.ShippingAddress `json:"billTo"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err := app.client.UpdateCustomerPaymentProfile(paymentProfileId, customerProfileId, req.CreditCard, req.BillTo)
+	err := app.client.UpdateCustomerPaymentProfile(paymentProfileId, customerProfileId, req.CreditCard, req.BillTo, req.CustomerType)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
