@@ -458,7 +458,7 @@ type UpdateCustomerProfileRequest struct {
 	Profile                UpdateableProfileData  `json:"profile"`
 }
 
-func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, customerProfileId string, creditCard CreditCard, billTo ShippingAddress, customerType string) error {
+func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, customerProfileId string, creditCard CreditCard, billTo ShippingAddress) error {
 	requestWrapper := struct {
 		Request UpdateCustomerPaymentProfileRequest `json:"updateCustomerPaymentProfileRequest"`
 	}{
@@ -466,19 +466,16 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
 			PaymentProfile: PaymentProfile{
+				CustomerPaymentProfileId: customerPaymentProfileId,
+				BillTo:                   &billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
-				CustomerPaymentProfileId: customerPaymentProfileId,
-				CustomerType:             customerType,
-				BillTo:                   &billTo,
 			},
 		},
 	}
 
 	var response UpdateCustomerPaymentProfileResponse
-	jsonData, _ := json.Marshal(requestWrapper)
-	log.Printf("Update Request JSON: %s", string(jsonData))
 	if err := c.makeRequest(requestWrapper, &response); err != nil {
 		return err
 	}
@@ -665,7 +662,6 @@ func (c *APIClient) UpdateBillingAddress(customerprofileID string, paymentProfil
 type CreditCard struct {
 	CardNumber     string `json:"cardNumber"`
 	ExpirationDate string `json:"expirationDate"`
-	CardCode       string `json:"cardCode,omitempty"`
 }
 
 type Payment struct {
@@ -673,11 +669,10 @@ type Payment struct {
 }
 
 type PaymentProfile struct {
-	Payment                  Payment          `json:"payment,omitempty"`
 	CustomerPaymentProfileId string           `json:"customerPaymentProfileId,omitempty"`
-	DefaultPaymentProfile    bool             `json:"defaultPaymentProfile,omitempty"`
+	CustomerType             string           `json:"customerType,omitempty"`
 	BillTo                   *ShippingAddress `json:"billTo,omitempty"`
-	CustomerType             string           `json:"customerType,omitempty"` // Optional, omit for update if needed
+	Payment                  Payment          `json:"payment"`
 }
 
 type CreateCustomerPaymentProfileRequest struct {
@@ -686,8 +681,7 @@ type CreateCustomerPaymentProfileRequest struct {
 	PaymentProfile         PaymentProfile         `json:"paymentProfile"`
 }
 
-func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, billTo *ShippingAddress) (string, error) {
-	log.Printf("Add Payment Profile: %s %s %v", profileID, creditCard, billTo)
+func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard) (string, error) {
 	requestWrapper := struct {
 		Request CreateCustomerPaymentProfileRequest `json:"createCustomerPaymentProfileRequest"`
 	}{
@@ -695,8 +689,6 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, b
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      profileID,
 			PaymentProfile: PaymentProfile{
-
-				BillTo: billTo,
 				Payment: Payment{
 					CreditCard: creditCard,
 				},
@@ -724,42 +716,4 @@ func (c *APIClient) AddPaymentProfile(profileID string, creditCard CreditCard, b
 		return "", fmt.Errorf("API error: unknown error")
 	}
 	return response.CustomerPaymentProfileId, nil
-}
-
-type DeleteCustomerPaymentProfileRequest struct {
-	MerchantAuthentication   MerchantAuthentication `json:"merchantAuthentication"`
-	CustomerProfileId        string                 `json:"customerProfileId"`
-	CustomerPaymentProfileId string                 `json:"customerPaymentProfileId"`
-}
-
-func (c *APIClient) DeleteCustomerPaymentProfile(customerProfileId, customerPaymentProfileId string) error {
-	requestWrapper := struct {
-		Request DeleteCustomerPaymentProfileRequest `json:"deleteCustomerPaymentProfileRequest"`
-	}{
-		Request: DeleteCustomerPaymentProfileRequest{
-			MerchantAuthentication:   c.Auth,
-			CustomerProfileId:        customerProfileId,
-			CustomerPaymentProfileId: customerPaymentProfileId,
-		},
-	}
-
-	var response struct {
-		Messages struct {
-			ResultCode string `json:"resultCode"`
-			Message    []struct {
-				Code string `json:"code"`
-				Text string `json:"text"`
-			} `json:"message"`
-		} `json:"messages"`
-	}
-	if err := c.makeRequest(requestWrapper, &response); err != nil {
-		return err
-	}
-	if response.Messages.ResultCode != "Ok" {
-		if len(response.Messages.Message) > 0 {
-			return fmt.Errorf("API error: %s", response.Messages.Message[0].Text)
-		}
-		return fmt.Errorf("API error: unknown error")
-	}
-	return nil
 }
