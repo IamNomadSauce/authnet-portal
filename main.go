@@ -589,16 +589,23 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	log.Printf("Decoded req: %+v", req)
 
 	customerProfileId := req.CustomerProfileId
-	paymentProfileId := req.PaymentProfileId
-	paymentMap := map[string]interface{}{
-		"billTo": req.BillTo,
-		"payment": map[string]interface{}{
-			"creditCard": req.CreditCard,
+	paymentProfile := struct {
+		BillTo  *authorizenet.ShippingAddress `json:"billTo,omitempty"`
+		Payment struct {
+			CreditCard authorizenet.CreditCard `json:"creditCard,omitempty"`
+		} `json:"payment,omitempty"`
+		CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
+	}{
+		BillTo: &req.BillTo,
+		Payment: struct {
+			CreditCard authorizenet.CreditCard `json:"creditCard,omitempty"`
+		}{
+			CreditCard: req.CreditCard,
 		},
-		"customerPaymentProfileId": req.PaymentProfileId,
+		CustomerPaymentProfileId: req.PaymentProfileId,
 	}
 
-	err = app.client.UpdatePaymentProfile(customerProfileId, paymentProfileId, paymentMap)
+	err = app.client.UpdatePaymentProfile(customerProfileId, &paymentProfile)
 	if err != nil {
 		log.Printf("API error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -490,27 +490,38 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 	return nil
 }
 
-func (c *APIClient) UpdatePaymentProfile(customerProfileId, customerPaymentProfileId string, req map[string]interface{}) error {
-	log.Printf("Update Payment Profile: %s %s", customerProfileId, customerPaymentProfileId)
-
-	// Use map for exact schema order: payment, customerPaymentProfileId, billTo
-	paymentProfile := map[string]interface{}{
-		"payment":                  req["payment"], // { "creditCard": { ... } }
-		"customerPaymentProfileId": customerPaymentProfileId,
-		"billTo":                   req["billTo"], // { "firstName": ..., ... }
-	}
+func (c *APIClient) UpdatePaymentProfile(customerProfileId string, paymentProfile *struct {
+	BillTo  *ShippingAddress `json:"billTo,omitempty"`
+	Payment struct {
+		CreditCard CreditCard `json:"creditCard,omitempty"`
+	} `json:"payment,omitempty"`
+	CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
+}) error {
+	log.Printf("Update Payment Profile: %s", customerProfileId)
 
 	requestWrapper := struct {
 		Request struct {
 			MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
 			CustomerProfileId      string                 `json:"customerProfileId"`
-			PaymentProfile         map[string]interface{} `json:"paymentProfile"`
+			PaymentProfile         *struct {
+				BillTo  *ShippingAddress `json:"billTo,omitempty"`
+				Payment struct {
+					CreditCard CreditCard `json:"creditCard,omitempty"`
+				} `json:"payment,omitempty"`
+				CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
+			} `json:"paymentProfile"`
 		} `json:"updateCustomerPaymentProfileRequest"`
 	}{
 		Request: struct {
 			MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
 			CustomerProfileId      string                 `json:"customerProfileId"`
-			PaymentProfile         map[string]interface{} `json:"paymentProfile"`
+			PaymentProfile         *struct {
+				BillTo  *ShippingAddress `json:"billTo,omitempty"`
+				Payment struct {
+					CreditCard CreditCard `json:"creditCard,omitempty"`
+				} `json:"payment,omitempty"`
+				CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
+			} `json:"paymentProfile"`
 		}{
 			MerchantAuthentication: c.Auth,
 			CustomerProfileId:      customerProfileId,
