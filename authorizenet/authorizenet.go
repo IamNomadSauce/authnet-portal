@@ -490,6 +490,60 @@ func (c *APIClient) UpdateCustomerPaymentProfile(customerPaymentProfileId, custo
 	return nil
 }
 
+func (c *APIClient) UpdatePaymentProfile(customerProfileId, customerPaymentProfileId string, req map[string]interface{}) error {
+	log.Printf("Update Payment Profile: %s %s", customerProfileId, customerPaymentProfileId)
+
+	// Use map for exact schema order: payment, customerPaymentProfileId, billTo
+	paymentProfile := map[string]interface{}{
+		"payment":                  req["payment"], // { "creditCard": { ... } }
+		"customerPaymentProfileId": customerPaymentProfileId,
+		"billTo":                   req["billTo"], // { "firstName": ..., ... }
+	}
+
+	requestWrapper := struct {
+		Request struct {
+			MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+			CustomerProfileId      string                 `json:"customerProfileId"`
+			PaymentProfile         map[string]interface{} `json:"paymentProfile"`
+		} `json:"updateCustomerPaymentProfileRequest"`
+	}{
+		Request: struct {
+			MerchantAuthentication MerchantAuthentication `json:"merchantAuthentication"`
+			CustomerProfileId      string                 `json:"customerProfileId"`
+			PaymentProfile         map[string]interface{} `json:"paymentProfile"`
+		}{
+			MerchantAuthentication: c.Auth,
+			CustomerProfileId:      customerProfileId,
+			PaymentProfile:         paymentProfile,
+		},
+	}
+
+	jsonData, _ := json.Marshal(requestWrapper)
+	log.Printf("Serialized Update Request: %s", string(jsonData))
+
+	var response struct {
+		Messages struct {
+			ResultCode string `json:"resultCode"`
+			Message    []struct {
+				Code string `json:"code"`
+				Text string `json:"text"`
+			} `json:"message"`
+		} `json:"messages"`
+	}
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
+		}
+		return fmt.Errorf("API error: update payment profile failed with ResultCode: '%s'", response.Messages.ResultCode)
+	}
+
+	return nil
+}
+
 func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) error {
 	requestWrapper := struct {
 		Request UpdateCustomerProfileRequest `json:"updateCustomerProfileRequest"`

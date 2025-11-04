@@ -96,13 +96,18 @@ func main() {
 	r.HandleFunc("/customer-profiles", app.createCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}", app.getCustomerProfileHandler).Methods("GET")
 	r.HandleFunc("/customer-profiles", app.getAllCustomerProfilesHandler).Methods("GET")
-	r.HandleFunc("/transactions", app.chargeCustomerProfileHandler).Methods("POST")
+
 	r.HandleFunc("/customer-profiles/{id}", app.updateCustomerProfileHandler).Methods("PUT")
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses", app.addShippingAddressHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/shipping-addresses/{addressId}", app.deleteShippingAddressHandler).Methods("DELETE")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles", app.addPaymentProfileHandler).Methods("POST")
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
+
 	r.HandleFunc("/customer-profiles/{customerProfileId}/payment-profiles/{paymentProfileId}", app.updateCustomerPaymentProfileHandler).Methods("PUT")
+
+	r.HandleFunc("/update-payment-profile", app.updatePaymentProfileHandler).Methods("PUT")
+
+	r.HandleFunc("/transactions", app.chargeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/transactions/authorize", app.authorizeCustomerProfileHandler).Methods("POST")
 	r.HandleFunc("/transactions/capture", app.capturePriorAuthTransactionHandler).Methods("POST")
 
@@ -557,6 +562,42 @@ func (app *application) addPaymentProfileHandler(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("=== UPDATE PAYMENT PROFILE HANDLER REACHED ===")
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Failed to read body: %v", err)
+		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Raw body for update: %s", string(body))
+
+	vars := mux.Vars(r)
+	customerProfileId := vars["customerProfileId"]
+	paymentProfileId := vars["paymentProfileId"]
+	log.Printf("Update Payment Profile: Customer=%s Payment=%s", customerProfileId, paymentProfileId)
+
+	// Parse raw JSON from CFM (no struct to preserve order)
+	var req map[string]interface{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		log.Printf("Decode error: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	log.Printf("Decoded req: %+v", req)
+
+	err = app.client.UpdatePaymentProfile(customerProfileId, paymentProfileId, req)
+	if err != nil {
+		log.Printf("API error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Payment profile updated successfully")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Payment profile updated successfully"})
 }
 
 func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *http.Request) {
