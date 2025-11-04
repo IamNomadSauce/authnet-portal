@@ -591,11 +591,11 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	customerProfileId := req.PaymentProfileId
 	paymentProfileId := req.PaymentProfileId
 	paymentMap := map[string]interface{}{
-		"customerPaymentProfileId": req.PaymentProfileId,
 		"payment": map[string]interface{}{
 			"creditCard": req.CreditCard,
 		},
-		"billTo": req.BillTo,
+		"customerPaymentProfileId": req.PaymentProfileId,
+		"billTo":                   req.BillTo,
 	}
 
 	err = app.client.UpdatePaymentProfile(customerProfileId, paymentProfileId, paymentMap)
