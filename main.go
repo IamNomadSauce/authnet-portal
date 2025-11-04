@@ -575,7 +575,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	log.Printf("Raw body for update: %s", string(body))
 
 	var req struct {
-		CustomerProfileId        string                       `json:"customerProfileId"`
+		PaymentProfileId         string                       `json:"paymentProfileId"`
 		CustomerPaymentProfileId string                       `json:"customerPaymentProfileId"`
 		CreditCard               authorizenet.CreditCard      `json:"creditCard"`
 		BillTo                   authorizenet.ShippingAddress `json:"billTo"`
@@ -588,10 +588,10 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	}
 	log.Printf("Decoded req: %+v", req)
 
-	customerProfileId := req.CustomerProfileId
-	paymentProfileId := req.CustomerPaymentProfileId
+	customerProfileId := req.PaymentProfileId
+	paymentProfileId := req.PaymentProfileId
 	paymentMap := map[string]interface{}{
-		"customerPaymentProfileId": req.CustomerPaymentProfileId,
+		"customerPaymentProfileId": req.PaymentProfileId,
 		"payment": map[string]interface{}{
 			"creditCard": req.CreditCard,
 		},
