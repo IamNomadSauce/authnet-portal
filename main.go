@@ -574,13 +574,13 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	}
 	log.Printf("Raw body for update: %s", string(body))
 
-	vars := mux.Vars(r)
-	customerProfileId := vars["customerProfileId"]
-	paymentProfileId := vars["paymentProfileId"]
-	log.Printf("Update Payment Profile: Customer=%s Payment=%s", customerProfileId, paymentProfileId)
+	var req struct {
+		CustomerProfileId        string                       `json:"customerProfileId"`
+		CustomerPaymentProfileId string                       `json:"customerPaymentProfileId"`
+		CreditCard               authorizenet.CreditCard      `json:"creditCard"`
+		BillTo                   authorizenet.ShippingAddress `json:"billTo"`
+	}
 
-	// Parse raw JSON from CFM (no struct to preserve order)
-	var req map[string]interface{}
 	if err := json.Unmarshal(body, &req); err != nil {
 		log.Printf("Decode error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -588,7 +588,14 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	}
 	log.Printf("Decoded req: %+v", req)
 
-	err = app.client.UpdatePaymentProfile(customerProfileId, paymentProfileId, req)
+	customerProfileId := req.CustomerProfileId
+	paymentProfileId := req.CustomerPaymentProfileId
+	paymentMap := map[string]interface{}{
+		"creditCard": req.CreditCard,
+		"billTo":     req.BillTo,
+	}
+
+	err = app.client.UpdatePaymentProfile(customerProfileId, paymentProfileId, paymentMap)
 	if err != nil {
 		log.Printf("API error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
