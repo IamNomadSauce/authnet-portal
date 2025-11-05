@@ -574,11 +574,14 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	}
 	log.Printf("Raw body for update: %s", string(body))
 
+	// FIXED: Nest Payment to match incoming JSON: "payment": { "creditCard": { ... } }
 	var req struct {
-		CustomerProfileId string                       `json:"customerProfileId"`
-		PaymentProfileId  string                       `json:"paymentProfileId"`
-		Payment           authorizenet.CreditCard      `json:"payment"`
-		BillTo            authorizenet.ShippingAddress `json:"billTo"`
+		CustomerProfileId string `json:"customerProfileId"`
+		PaymentProfileId  string `json:"paymentProfileId"`
+		Payment           struct {
+			CreditCard authorizenet.CreditCard `json:"creditCard"`
+		} `json:"payment"`
+		BillTo authorizenet.ShippingAddress `json:"billTo"`
 	}
 
 	if err := json.Unmarshal(body, &req); err != nil {
@@ -586,7 +589,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Decoded req: |%+v|", req)
+	log.Printf("Decoded req: |%+v|", req) // Now CardNumber should log as populated
 
 	customerProfileId := req.CustomerProfileId
 	paymentProfile := struct {
@@ -597,10 +600,11 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
 	}{
 		BillTo: &req.BillTo,
+		// FIXED: Access the nested CreditCard
 		Payment: struct {
 			CreditCard authorizenet.CreditCard `json:"creditCard,omitempty"`
 		}{
-			CreditCard: req.Payment,
+			CreditCard: req.Payment.CreditCard, // Now passes the actual card details
 		},
 		CustomerPaymentProfileId: req.PaymentProfileId,
 	}
