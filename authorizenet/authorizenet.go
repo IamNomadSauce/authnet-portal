@@ -497,7 +497,7 @@ func (c *APIClient) UpdatePaymentProfile(customerProfileId string, paymentProfil
 	} `json:"payment,omitempty"`
 	CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
 }) error {
-	log.Printf("Update Payment Profile: %s", customerProfileId)
+	log.Printf("Update Payment Profile: %s", customerProfileId, paymentProfile.Payment.CreditCard)
 
 	requestWrapper := struct {
 		Request struct {
