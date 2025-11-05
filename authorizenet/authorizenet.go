@@ -497,7 +497,7 @@ func (c *APIClient) UpdatePaymentProfile(customerProfileId string, paymentProfil
 	} `json:"payment,omitempty"`
 	CustomerPaymentProfileId string `json:"customerPaymentProfileId,omitempty"`
 }) error {
-	log.Printf("Update Payment Profile: %s", customerProfileId, paymentProfile.Payment.CreditCard)
+	log.Printf("Update Payment Profile: %s", customerProfileId)
 
 	requestWrapper := struct {
 		Request struct {
@@ -529,8 +529,8 @@ func (c *APIClient) UpdatePaymentProfile(customerProfileId string, paymentProfil
 		},
 	}
 
-	jsonData, _ := json.Marshal(requestWrapper)
-	log.Printf("Serialized Update Request: %s", string(jsonData))
+	// jsonData, _ := json.Marshal(requestWrapper)
+	// log.Printf("Serialized Update Request: %s", string(jsonData))
 
 	var response struct {
 		Messages struct {
