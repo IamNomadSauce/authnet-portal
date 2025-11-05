@@ -577,7 +577,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	var req struct {
 		CustomerProfileId string                       `json:"customerProfileId"`
 		PaymentProfileId  string                       `json:"paymentProfileId"`
-		CreditCard        authorizenet.CreditCard      `json:"creditCard"`
+		Payment           authorizenet.CreditCard      `json:"payment"`
 		BillTo            authorizenet.ShippingAddress `json:"billTo"`
 	}
 
@@ -586,7 +586,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Decoded Credit Card: |%+v|", req.CreditCard)
+	log.Printf("Decoded Credit Card: |%+v|", req.Payment)
 
 	customerProfileId := req.CustomerProfileId
 	paymentProfile := struct {
@@ -600,7 +600,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		Payment: struct {
 			CreditCard authorizenet.CreditCard `json:"creditCard,omitempty"`
 		}{
-			CreditCard: req.CreditCard,
+			CreditCard: req.Payment,
 		},
 		CustomerPaymentProfileId: req.PaymentProfileId,
 	}
