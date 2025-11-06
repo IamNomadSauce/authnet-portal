@@ -555,6 +555,48 @@ func (c *APIClient) UpdatePaymentProfile(customerProfileId string, paymentProfil
 	return nil
 }
 
+type DeleteCustomerPaymentProfileRequest struct {
+	MerchantAuthentication   MerchantAuthentication `json:"merchantAuthentication"`
+	CustomerProfileId        string                 `json:"customerProfileId"`
+	CustomerPaymentProfileId string                 `json:"customerPaymentProfileId"`
+}
+
+type DeleteCustomerPaymentProfileResponse struct {
+	Messages struct {
+		ResultCode string `json:"resultCode"`
+		Message    []struct {
+			Code string `json:"code"`
+			Text string `json:"text"`
+		} `json:"message"`
+	} `json:"messages"`
+}
+
+func (c *APIClient) DeletePaymentProfile(customerProfileId, paymentProfileId string) error {
+	requestWrapper := struct {
+		Request DeleteCustomerPaymentProfileRequest `json:"deleteCustomerPaymentProfileRequest"`
+	}{
+		Request: DeleteCustomerPaymentProfileRequest{
+			MerchantAuthentication:   c.Auth,
+			CustomerProfileId:        customerProfileId,
+			CustomerPaymentProfileId: paymentProfileId,
+		},
+	}
+
+	var response DeleteCustomerPaymentProfileResponse
+	if err := c.makeRequest(requestWrapper, &response); err != nil {
+		return err
+	}
+
+	if response.Messages.ResultCode != "Ok" {
+		if len(response.Messages.Message) > 0 {
+			return fmt.Errorf("API error: %s (Code: %s)", response.Messages.Message[0].Text, response.Messages.Message[0].Code)
+		}
+		return fmt.Errorf("API error: delete payment profile failed with ResultCode '%s'", response.Messages.ResultCode)
+	}
+
+	return nil
+}
+
 func (c *APIClient) UpdateCustomerProfile(profileID, email, description string) error {
 	requestWrapper := struct {
 		Request UpdateCustomerProfileRequest `json:"updateCustomerProfileRequest"`

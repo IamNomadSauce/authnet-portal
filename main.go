@@ -104,6 +104,7 @@ func main() {
 	r.HandleFunc("/customer-profiles/{id}/payment-profiles/{paymentProfileId}", app.updateBillingAddressHandler).Methods("PUT")
 
 	r.HandleFunc("/customer-profiles/{customerProfileId}/payment-profiles/{paymentProfileId}", app.updateCustomerPaymentProfileHandler).Methods("PUT")
+	r.HandleFunc("/customer-profiles/{customerProfileId}/payment-profiles/{paymentProfileId}", app.deletePaymentProfileHandler).Methods("DELETE")
 
 	r.HandleFunc("/update-payment-profile", app.updatePaymentProfileHandler).Methods("PUT")
 
@@ -619,6 +620,28 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 	log.Println("Payment profile updated successfully")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Payment profile updated successfully"})
+}
+
+func (app *application) deletePaymentProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	customerProfileId := vars["customerProfileId"]
+	paymentProfileId := vars["paymentProfileId"]
+
+	if customerProfileId == "" || paymentProfileId == "" {
+		http.Error(w, "Missing customerProfileId or paymentProfileId", http.StatusBadRequest)
+		return
+	}
+
+	err := app.client.DeletePaymentProfile(customerProfileId, paymentProfileId)
+	if err != nil {
+		log.Printf("Error deleting payment profile: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Payment profile deleted successfully"})
 }
 
 func (app *application) updateBillingAddressHandler(w http.ResponseWriter, r *http.Request) {
