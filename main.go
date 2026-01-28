@@ -174,7 +174,7 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 	bodyStr = strings.Replace(bodyStr, "\\'", "'", -1)
 	body = []byte(bodyStr)
 
-	log.Printf("Sanitized JSON payload: %s", string(body)) // Log for verification
+	// log.Printf("Sanitized JSON payload: %s", string(body)) // Log for verification
 
 	var req CreateProfileRequest
 
@@ -184,14 +184,14 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	log.Printf("Successfully decoded request.")
+	// log.Printf("Successfully decoded request.")
 
 	validationMode := app.config.AuthNet.ValidationMode
 	if req.ValidationMode != "" {
 		validationMode = req.ValidationMode
 	}
 
-	log.Printf("Create Customer Profile: ValidationMode %s", validationMode)
+	// log.Printf("Create Customer Profile: ValidationMode %s", validationMode)
 
 	profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
 	if err != nil {
@@ -206,47 +206,6 @@ func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
-
-// func (app *application) createCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
-// 	log.Print("Create New Customer Profile Handler")
-// 	body, err := io.ReadAll(r.Body)
-// 	if err != nil {
-// 		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
-// 		return
-// 	}
-//
-// 	// log.Printf("Received raw JSON payload: %s", string(body))
-//
-// 	var req CreateProfileRequest
-//
-// 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-// 		log.Printf("--> JSON decoding error: %v", err)
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
-//
-// 	log.Printf("Successfully decoded request.")
-//
-// 	validationMode := app.config.AuthNet.ValidationMode
-// 	if req.ValidationMode != "" {
-// 		validationMode = req.ValidationMode
-// 	}
-//
-// 	log.Printf("Create Customer Profile: ValidationMode %s", validationMode)
-//
-// 	profileID, err := app.client.CreateCustomerProfile(req.Profile, validationMode)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-//
-// 	log.Printf("Successfully created profile. Returning ID: %s to client.", profileID)
-//
-// 	response := map[string]string{"customerProfileId": profileID}
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	json.NewEncoder(w).Encode(response)
-// }
 
 func (app *application) getCustomerProfileHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Get Customer Handler")
