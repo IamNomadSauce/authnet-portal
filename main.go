@@ -532,7 +532,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "Cannot read request body", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Raw body for update: %s", string(body))
+	// log.Printf("Raw body for update: %s", string(body))
 
 	// FIXED: Nest Payment to match incoming JSON: "payment": { "creditCard": { ... } }
 	var req struct {
@@ -582,6 +582,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 }
 
 func (app *application) deletePaymentProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Delete Payment Profile")
 	vars := mux.Vars(r)
 	customerProfileId := vars["customerProfileId"]
 	paymentProfileId := vars["paymentProfileId"]
