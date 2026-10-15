@@ -549,7 +549,7 @@ func (app *application) updatePaymentProfileHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Decoded req: |%+v|", req) // Now CardNumber should log as populated
+	// log.Printf("Decoded req: |%+v|", req)
 
 	customerProfileId := req.CustomerProfileId
 	paymentProfile := struct {
